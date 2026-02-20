@@ -94,6 +94,32 @@ Sensitive fields (`token`, `authorization`, `key`, etc.) are redacted in verbose
   - `vscode://local-dev.arcgis-api-key-explorer/auth-callback`
   - `vscode-insiders://local-dev.arcgis-api-key-explorer/auth-callback` (if needed)
 
+## Running the Chrome Extension Locally
+
+You do not need a published Chrome Web Store extension to test OAuth.
+
+Important:
+- Chrome extension OAuth does not use `localhost` redirect URLs.
+- `chrome.identity.launchWebAuthFlow` requires a redirect URL in this format:
+  - `https://<extension-id>.chromiumapp.org/`
+
+Local development steps:
+1. Build the extension:
+   - `npm run build:core`
+   - `npm run build:chrome`
+2. Open `chrome://extensions`.
+3. Turn on **Developer mode**.
+4. Click **Load unpacked** and select `packages/chrome/dist`.
+5. Copy the generated extension ID from the extension card.
+6. In your ArcGIS OAuth app, add redirect URI:
+   - `https://<that-extension-id>.chromiumapp.org/`
+7. Save the ArcGIS app settings.
+8. Open the extension popup, add environment + client ID, then sign in.
+
+Notes:
+- Redirect URL must match exactly (including `https` and trailing slash).
+- If extension ID changes (e.g., reloaded from a different path/profile), update the ArcGIS redirect URI.
+
 ## Scope and Current Implementation Notes
 
 - Current list loading is intentionally scoped to API keys endpoint (`/portals/self/apiKeys`).

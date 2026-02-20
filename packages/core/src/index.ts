@@ -1,5 +1,4 @@
 export * from './adapters/interfaces.js';
-export * from './components/index.js';
 export * from './environment/environment-manager.js';
 export * from './logic/debounce.js';
 export * from './logic/expiration.js';

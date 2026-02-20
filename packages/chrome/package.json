@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node ./scripts/build.mjs"
+    "build": "node ./scripts/build.mjs",
+    "test": "tsc -p tsconfig.test.json && node --test \"dist-test/test/**/*.test.js\""
   },
   "dependencies": {
     "@arcgis-api-keys/core": "0.1.0"

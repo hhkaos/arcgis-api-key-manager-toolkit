@@ -11,6 +11,8 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 - [x] Implement end-to-end shared core + VS Code credential explorer baseline from current repository diff - 2026-02-20
 - [x] Modernize UI to compact, squared, Material-inspired styling across shared Lit components and VS Code webview shell (unplanned) - 2026-02-20
 - [x] Add dynamic VS Code theme-token adoption (`--vscode-*`) so UI matches active editor theme/profile with safe fallbacks (unplanned) - 2026-02-20
+- [x] Re-sequence implementation to build Chrome extension baseline before remaining VS Code polish tasks for faster UI debugging (planned deviation) - 2026-02-20
+- [x] Add Chrome popup state unit tests for auth control visibility, enterprise portal field visibility, and post-sign-in explorer auto-open logic - 2026-02-20
 
 ---
 
@@ -141,7 +143,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 - [x] Register URI handler for callback
 - [x] Exchange auth code for access token
 - [x] Store token in SecretStorage keyed by environment ID
-- [ ] Handle token expiry: block + re-auth + require user restart
+- [ ] Handle token expiry: block + re-auth + require user restart (deferred until after Chrome baseline)
 
 ### 2.6 Commands
 
@@ -162,46 +164,48 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ## Phase 3 — Chrome Extension (`packages/chrome`)
 
+Status: `[x] Baseline implemented` (moved ahead of remaining VS Code polish on 2026-02-20)
+
 ### 3.1 Manifest
 
-- [ ] Create `manifest.json` (Manifest V3)
-- [ ] Configure `permissions`: `identity`, `storage`
-- [ ] Configure `host_permissions` for ArcGIS endpoints
-- [ ] Configure `action` (popup), `background` (service worker)
+- [x] Create `manifest.json` (Manifest V3)
+- [x] Configure `permissions`: `identity`, `storage`
+- [x] Configure `host_permissions` for ArcGIS endpoints
+- [x] Configure `action` (popup), `background` (service worker)
 
 ### 3.2 Platform Adapters
 
-- [ ] Implement `StorageAdapter` using `chrome.storage.session`
-- [ ] Implement `AuthAdapter` using `chrome.identity.launchWebAuthFlow`
-- [ ] Implement `ClipboardAdapter` using `navigator.clipboard` with fallback
+- [x] Implement `StorageAdapter` using `chrome.storage.session`
+- [x] Implement `AuthAdapter` using `chrome.identity.launchWebAuthFlow`
+- [x] Implement `ClipboardAdapter` using `navigator.clipboard` with fallback
 
 ### 3.3 Popup (Launcher)
 
-- [ ] Create `popup.html` — minimal launcher page
-- [ ] Environment selector dropdown
-- [ ] Sign-in status display
-- [ ] "Open Explorer" button → `chrome.tabs.create()`
+- [x] Create `popup.html` — minimal launcher page
+- [x] Environment selector dropdown
+- [x] Sign-in status display
+- [x] "Open Explorer" button → `chrome.tabs.create()`
 
 ### 3.4 Full-Tab Page
 
-- [ ] Create `explorer.html` with shared Lit components
-- [ ] Set up messaging bridge (tab page ↔ service worker)
-- [ ] Environment selector in-page
-- [ ] Load credential list, detail, and modal components
+- [x] Create `explorer.html` with shared Lit components
+- [x] Set up messaging bridge (tab page ↔ service worker)
+- [x] Environment selector in-page
+- [x] Load credential list, detail, and modal components
 
 ### 3.5 Service Worker
 
-- [ ] Create background service worker
-- [ ] Handle messages from popup and full-tab page
-- [ ] Execute core REST client calls
-- [ ] Manage OAuth flow via `chrome.identity`
-- [ ] Manage tokens in `chrome.storage.session`
+- [x] Create background service worker
+- [x] Handle messages from popup and full-tab page
+- [x] Execute core REST client calls
+- [x] Manage OAuth flow via `chrome.identity`
+- [x] Manage tokens in `chrome.storage.session`
 
 ### 3.6 Enterprise Host Permissions
 
-- [ ] Implement dynamic host permission requests via `chrome.permissions.request()`
-- [ ] Request on Enterprise environment configuration
-- [ ] Persist granted permissions
+- [x] Implement dynamic host permission requests via `chrome.permissions.request()`
+- [x] Request on Enterprise environment configuration
+- [x] Persist granted permissions
 
 ---
 
@@ -216,6 +220,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 - [x] Test environment manager (add, remove, switch)
 - [x] Test REST client pagination handling (mocked)
 - [x] Test REST client error mapping (mocked)
+- [x] Test Chrome popup visibility and sign-in post-auth state rules
 
 ### 4.2 Manual E2E Testing
 

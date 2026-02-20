@@ -2,35 +2,28 @@ import {
   deserializeMessage,
   serializeMessage,
   type ApiKeyCredential,
+  type EnvironmentConfig,
   type HostToWebviewMessage,
   type WebviewToHostMessage
 } from '@arcgis-api-keys/core';
 import '@arcgis-api-keys/core/components';
+import { ChromeClipboardAdapter } from './adapters/chrome-clipboard-adapter.js';
+import { CHROME_MESSAGE_SCOPE, isChromePushMessage, isHostMessage } from './runtime-types.js';
 
-interface VsCodeApi {
-  postMessage(message: string): void;
-  setState(state: unknown): void;
-  getState(): unknown;
-}
-
-declare const acquireVsCodeApi: () => VsCodeApi;
-
-type AuthState = 'checking' | 'logged-out' | 'logging-in' | 'logged-in' | 'logging-out';
-
-type CredentialListElement = HTMLElement & {
+interface CredentialListElement extends HTMLElement {
   credentials: ApiKeyCredential[];
   selectedCredentialId: string | null;
   loading: boolean;
   errorMessage: string;
-};
+}
 
-type CredentialDetailElement = HTMLElement & {
+interface CredentialDetailElement extends HTMLElement {
   credential: ApiKeyCredential | null;
   loading: boolean;
   errorMessage: string;
-};
+}
 
-type KeyActionModalElement = HTMLElement & {
+interface KeyActionModalElement extends HTMLElement {
   open: boolean;
   loading: boolean;
   errorMessage: string;
@@ -41,89 +34,119 @@ type KeyActionModalElement = HTMLElement & {
   existingPartialId: string;
   existingCreated: string;
   resultKey: string | null;
-};
+}
 
-const vscode = acquireVsCodeApi();
+type AuthState = 'checking' | 'logged-out' | 'logging-in' | 'logged-in' | 'logging-out';
 
 class ArcgisApiKeysAppElement extends HTMLElement {
   private readonly statusEl = document.createElement('p');
   private readonly infoEl = document.createElement('p');
   private readonly errorEl = document.createElement('p');
   private readonly actionsEl = document.createElement('div');
+  private readonly environmentSelectEl = document.createElement('select');
   private readonly signInButton = document.createElement('button');
   private readonly signOutButton = document.createElement('button');
   private readonly refreshButton = document.createElement('button');
+  private readonly copyLastKeyButton = document.createElement('button');
   private readonly credentialsEl = document.createElement('credential-list') as CredentialListElement;
   private readonly detailEl = document.createElement('credential-detail') as CredentialDetailElement;
   private readonly modalEl = document.createElement('key-action-modal') as KeyActionModalElement;
 
   private authState: AuthState = 'checking';
+  private readonly clipboard = new ChromeClipboardAdapter();
   private credentials: ApiKeyCredential[] = [];
   private selectedCredentialId: string | null = null;
   private selectedCredential: ApiKeyCredential | null = null;
+  private environments: EnvironmentConfig[] = [];
+  private activeEnvironmentId: string | null = null;
 
   public connectedCallback(): void {
     this.render();
-    this.post({ type: 'webview/initialize', payload: {} });
+    this.bindMessageListener();
+    void this.requestAndHandle({ type: 'webview/initialize', payload: {} });
   }
 
   private render(): void {
     const root = document.createElement('div');
-    root.style.fontFamily = "var(--vscode-font-family, 'Manrope', 'Segoe UI', 'Helvetica Neue', sans-serif)";
-    root.style.padding = '12px';
+    root.style.fontFamily = "'Avenir Next', 'Segoe UI', sans-serif";
+    root.style.padding = '14px';
     root.style.display = 'grid';
     root.style.gap = '10px';
-    root.style.background = 'var(--vscode-sideBar-background, #f7fafc)';
-    root.style.border = '1px solid var(--vscode-panel-border, #c6d0db)';
-    root.style.color = 'var(--vscode-editor-foreground, #18202a)';
 
     const title = document.createElement('h2');
-    title.textContent = this.dataset.environmentName
-      ? `ArcGIS API Keys - ${this.dataset.environmentName}`
-      : 'ArcGIS API Keys';
+    title.textContent = 'ArcGIS API Keys Explorer';
     title.style.margin = '0';
-    title.style.fontSize = '18px';
-    title.style.color = 'var(--vscode-editor-foreground, #18202a)';
+    title.style.fontSize = '20px';
 
     this.statusEl.style.margin = '0';
+    this.statusEl.style.fontSize = '13px';
 
-    this.infoEl.textContent =
-      'Credential list/detail and key actions are now wired through the extension host.';
+    this.infoEl.textContent = 'Chrome host wiring is active. UI components are shared from packages/core.';
     this.infoEl.style.margin = '0';
-    this.infoEl.style.color = 'var(--vscode-descriptionForeground, #4d5a69)';
     this.infoEl.style.fontSize = '12px';
+    this.infoEl.style.color = '#425466';
 
     this.errorEl.style.margin = '0';
-    this.errorEl.style.color = 'var(--vscode-errorForeground, #b42318)';
+    this.errorEl.style.color = '#b42318';
     this.errorEl.style.fontWeight = '600';
     this.errorEl.style.fontSize = '12px';
     this.errorEl.hidden = true;
 
     this.actionsEl.style.display = 'flex';
     this.actionsEl.style.alignItems = 'center';
-    this.actionsEl.style.gap = '6px';
+    this.actionsEl.style.gap = '8px';
     this.actionsEl.style.flexWrap = 'wrap';
+
+    this.environmentSelectEl.style.minWidth = '260px';
+    this.environmentSelectEl.addEventListener('change', () => {
+      const environmentId = this.environmentSelectEl.value;
+      if (!environmentId) {
+        return;
+      }
+
+      void this.requestAndHandle({
+        type: 'webview/select-environment',
+        payload: { environmentId }
+      });
+    });
 
     setupButton(this.signInButton, 'Sign in with ArcGIS');
     setupButton(this.signOutButton, 'Sign out');
     setupButton(this.refreshButton, 'Refresh Credentials');
+    setupButton(this.copyLastKeyButton, 'Copy Last Key');
 
     this.signInButton.addEventListener('click', () => {
       this.clearError();
       this.authState = 'logging-in';
       this.syncUiState();
-      this.post({ type: 'webview/sign-in', payload: {} });
+      void this.requestAndHandle({ type: 'webview/sign-in', payload: {} });
     });
 
     this.signOutButton.addEventListener('click', () => {
       this.clearError();
       this.authState = 'logging-out';
       this.syncUiState();
-      this.post({ type: 'webview/sign-out', payload: {} });
+      void this.requestAndHandle({ type: 'webview/sign-out', payload: {} });
     });
 
     this.refreshButton.addEventListener('click', () => {
       this.loadCredentials();
+    });
+
+    this.copyLastKeyButton.addEventListener('click', async () => {
+      if (!this.modalEl.resultKey) {
+        return;
+      }
+
+      try {
+        this.clearError();
+        await this.clipboard.copy(this.modalEl.resultKey);
+        this.statusEl.textContent = 'Copied last generated key.';
+      } catch (error) {
+        this.errorEl.hidden = false;
+        this.errorEl.textContent =
+          error instanceof Error ? error.message : 'Failed to copy key to clipboard.';
+      }
     });
 
     this.credentialsEl.addEventListener('credential-refresh', () => {
@@ -141,7 +164,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.detailEl.loading = true;
       this.detailEl.errorMessage = '';
 
-      this.post({
+      void this.requestAndHandle({
         type: 'webview/load-credential-detail',
         payload: { credentialId: detail.credentialId }
       });
@@ -181,7 +204,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
 
       this.modalEl.loading = true;
       this.modalEl.errorMessage = '';
-      this.post({
+      void this.requestAndHandle({
         type: 'webview/key-action',
         payload: {
           credentialId: detail.credentialId,
@@ -206,17 +229,54 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.modalEl.errorMessage = '';
     this.modalEl.resultKey = null;
 
-    this.actionsEl.append(this.signInButton, this.signOutButton, this.refreshButton);
+    this.actionsEl.append(
+      this.environmentSelectEl,
+      this.signInButton,
+      this.signOutButton,
+      this.refreshButton,
+      this.copyLastKeyButton
+    );
 
-    root.append(title, this.statusEl, this.infoEl, this.errorEl, this.actionsEl, this.credentialsEl, this.detailEl, this.modalEl);
+    root.append(
+      title,
+      this.statusEl,
+      this.infoEl,
+      this.errorEl,
+      this.actionsEl,
+      this.credentialsEl,
+      this.detailEl,
+      this.modalEl
+    );
 
     this.replaceChildren(root);
     this.syncUiState();
   }
 
-  public handleHostMessage(message: HostToWebviewMessage): void {
+  private bindMessageListener(): void {
+    chrome.runtime.onMessage.addListener((message: unknown) => {
+      if (!isChromePushMessage(message)) {
+        return;
+      }
+
+      const hostMessage = deserializeHostMessage(message.payload.message);
+      if (hostMessage) {
+        this.handleHostMessage(hostMessage);
+      }
+    });
+  }
+
+  private async requestAndHandle(message: WebviewToHostMessage): Promise<void> {
+    const hostMessage = await requestHostMessage(message);
+    this.handleHostMessage(hostMessage);
+  }
+
+  private handleHostMessage(message: HostToWebviewMessage): void {
     if (message.type === 'host/state') {
       this.clearError();
+      this.environments = message.payload.environments;
+      this.activeEnvironmentId = message.payload.activeEnvironmentId;
+      this.syncEnvironmentOptions();
+
       this.authState = message.payload.signedIn ? 'logged-in' : 'logged-out';
       this.syncUiState();
 
@@ -241,7 +301,6 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       const suffix = message.payload.code ? ` (${message.payload.code})` : '';
       this.errorEl.hidden = false;
       this.errorEl.textContent = `${message.payload.message}${suffix}`;
-      this.statusEl.textContent = this.authState === 'logged-in' ? 'Signed in.' : 'Not signed in.';
       this.credentialsEl.loading = false;
       this.detailEl.loading = false;
       this.modalEl.loading = false;
@@ -268,7 +327,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       if (this.selectedCredentialId) {
         this.detailEl.loading = true;
         this.detailEl.errorMessage = '';
-        this.post({
+        void this.requestAndHandle({
           type: 'webview/load-credential-detail',
           payload: { credentialId: this.selectedCredentialId }
         });
@@ -295,7 +354,34 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.modalEl.errorMessage = '';
       this.modalEl.resultKey = message.payload.result.key;
       this.statusEl.textContent = `Key action complete for slot ${message.payload.result.slot}.`;
+      this.syncUiState();
+      this.loadCredentials();
+      if (this.selectedCredentialId) {
+        void this.requestAndHandle({
+          type: 'webview/load-credential-detail',
+          payload: { credentialId: this.selectedCredentialId }
+        });
+      }
     }
+  }
+
+  private syncEnvironmentOptions(): void {
+    const current = this.activeEnvironmentId ?? '';
+
+    this.environmentSelectEl.replaceChildren();
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = this.environments.length > 0 ? 'Select environment' : 'No environments';
+    this.environmentSelectEl.append(placeholder);
+
+    for (const environment of this.environments) {
+      const option = document.createElement('option');
+      option.value = environment.id;
+      option.textContent = environment.name;
+      this.environmentSelectEl.append(option);
+    }
+
+    this.environmentSelectEl.value = current;
   }
 
   private syncUiState(): void {
@@ -309,6 +395,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.signInButton.disabled = isBusy;
     this.signOutButton.disabled = isBusy;
     this.refreshButton.disabled = isBusy;
+    this.copyLastKeyButton.disabled = isBusy || !this.modalEl.resultKey;
 
     this.credentialsEl.hidden = this.authState !== 'logged-in';
     this.detailEl.hidden = this.authState !== 'logged-in';
@@ -316,7 +403,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     if (this.authState === 'checking') {
       this.statusEl.textContent = 'Checking sign-in status...';
     } else if (this.authState === 'logged-out') {
-      this.statusEl.textContent = 'Not signed in.';
+      this.statusEl.textContent = this.environments.length > 0 ? 'Not signed in.' : 'No environment configured.';
     } else if (this.authState === 'logging-in') {
       this.statusEl.textContent = 'Signing in...';
     } else if (this.authState === 'logged-in') {
@@ -333,7 +420,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.credentialsEl.loading = true;
     this.credentialsEl.errorMessage = '';
     this.statusEl.textContent = 'Loading credentials...';
-    this.post({ type: 'webview/load-credentials', payload: { refresh: true } });
+    void this.requestAndHandle({ type: 'webview/load-credentials', payload: { refresh: true } });
   }
 
   private clearCredentialState(): void {
@@ -356,13 +443,62 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.modalEl.resultKey = null;
   }
 
-  private post(message: WebviewToHostMessage): void {
-    vscode.postMessage(serializeMessage(message));
-  }
-
   private clearError(): void {
     this.errorEl.hidden = true;
     this.errorEl.textContent = '';
+  }
+}
+
+async function requestHostMessage(message: WebviewToHostMessage): Promise<HostToWebviewMessage> {
+  try {
+    const response = (await chrome.runtime.sendMessage({
+      scope: CHROME_MESSAGE_SCOPE,
+      type: 'explorer/webview-message',
+      payload: { message: serializeMessage(message) }
+    })) as { ok?: boolean; hostMessage?: string; error?: string };
+
+    if (!response?.ok) {
+      return {
+        type: 'host/error',
+        payload: {
+          message: response?.error ?? 'Service worker request failed.',
+          recoverable: true
+        }
+      };
+    }
+
+    return deserializeHostMessage(response.hostMessage) ?? {
+      type: 'host/error',
+      payload: {
+        message: 'Service worker returned an invalid response.',
+        recoverable: true
+      }
+    };
+  } catch (error) {
+    return {
+      type: 'host/error',
+      payload: {
+        message: error instanceof Error ? error.message : 'Failed to communicate with service worker.',
+        recoverable: true
+      }
+    };
+  }
+}
+
+function deserializeHostMessage(raw: unknown): HostToWebviewMessage | null {
+  if (typeof raw !== 'string') {
+    return null;
+  }
+
+  try {
+    const parsed = deserializeMessage(raw);
+    if (!isHostMessage(parsed)) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    return null;
   }
 }
 
@@ -370,35 +506,17 @@ function setupButton(button: HTMLButtonElement, label: string): void {
   button.type = 'button';
   button.textContent = label;
   button.style.width = 'max-content';
-  button.style.border = '1px solid var(--vscode-button-border, var(--vscode-button-background, #0b63ce))';
+  button.style.border = '1px solid #7f95aa';
   button.style.borderRadius = '0';
   button.style.padding = '7px 9px';
   button.style.minHeight = '33px';
   button.style.fontSize = '12px';
-  button.style.fontFamily = "var(--vscode-font-family, 'Manrope', 'Segoe UI', 'Helvetica Neue', sans-serif)";
-  button.style.background = 'var(--vscode-button-secondaryBackground, var(--vscode-editor-background, #ffffff))';
+  button.style.fontFamily = "'Avenir Next', 'Segoe UI', sans-serif";
+  button.style.background = '#ffffff';
   button.style.cursor = 'pointer';
-  button.style.color = 'var(--vscode-button-secondaryForeground, var(--vscode-editor-foreground, #18202a))';
+  button.style.color = '#142331';
 }
 
 if (!customElements.get('arcgis-api-keys-app')) {
   customElements.define('arcgis-api-keys-app', ArcgisApiKeysAppElement);
 }
-
-window.addEventListener('message', (event: MessageEvent<unknown>) => {
-  if (typeof event.data !== 'string') {
-    return;
-  }
-
-  try {
-    const parsed = deserializeMessage(event.data);
-    if (!parsed.type.startsWith('host/')) {
-      return;
-    }
-
-    const app = document.querySelector<ArcgisApiKeysAppElement>('arcgis-api-keys-app');
-    app?.handleHostMessage(parsed as HostToWebviewMessage);
-  } catch {
-    // Ignore malformed host messages.
-  }
-});

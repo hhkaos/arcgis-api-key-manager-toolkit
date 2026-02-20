@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "ArcGIS API Key Explorer",
+  "description": "Explore and manage ArcGIS API key credentials.",
+  "version": "0.1.0",
+  "permissions": ["identity", "storage", "permissions"],
+  "host_permissions": ["https://*.arcgis.com/*"],
+  "optional_host_permissions": ["https://*/*"],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "ArcGIS API Key Explorer",
+    "default_popup": "popup.html"
+  }
+}

@@ -8,6 +8,13 @@
 
 The implementation follows the spec's build order: **shared core first, then VS Code extension, then Chrome extension**. Each phase builds on the previous one. The shared core and VS Code extension are developed together since VS Code is the primary validation target.
 
+Current execution sequence (temporary):
+
+- Shared core: complete baseline
+- VS Code extension: functional baseline complete, polish/release tasks deferred
+- Chrome extension: promoted ahead of VS Code polish to accelerate UI debugging in Chrome DevTools
+- VS Code deferred items: resumed after Chrome baseline is stable
+
 ---
 
 ## Phase 0 — Project Scaffolding
@@ -345,7 +352,7 @@ Phase 4: Testing (both)
 Phase 5: Release Prep
 ```
 
-Phase 2 and Phase 3 can run in parallel once Phase 1 is complete, but per the spec, VS Code is prioritized first.
+Phase 2 and Phase 3 can run in parallel once Phase 1 is complete. Current execution is intentionally Chrome-first for remaining implementation to speed UI iteration, then returns to VS Code polish.
 
 ---
 

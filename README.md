@@ -90,6 +90,7 @@ You must create your own ArcGIS OAuth application and use its client ID in the e
 3. Add redirect URI(s):
    - VS Code Stable: `vscode://local-dev.arcgis-api-key-explorer/auth-callback`
    - VS Code Insiders (if you use it): `vscode-insiders://local-dev.arcgis-api-key-explorer/auth-callback`
+   - Chrome extension (required for Chrome sign-in): `https://<chrome-extension-id>.chromiumapp.org/`
 4. Save the app and copy the generated client ID.
 5. In the Extension Development Host, run **ArcGIS API Keys: Add Environment** and paste that client ID.
 
@@ -97,6 +98,26 @@ Notes:
 - The extension ID used in redirects is `<publisher>.<name>` from `packages/vscode/package.json`.
 - In this repo today, that is `local-dev.arcgis-api-key-explorer`.
 - If you change `publisher` or `name`, update redirect URI(s) to match.
+
+### Chrome Redirect URL Setup
+
+When using the Chrome extension, ArcGIS must allow the exact redirect URL used by `chrome.identity.launchWebAuthFlow`.
+
+1. Build Chrome extension assets:
+   - `npm run build:core`
+   - `npm run build:chrome`
+2. Open `chrome://extensions`.
+3. Enable **Developer mode**.
+4. Click **Load unpacked** and select `packages/chrome/dist`.
+5. Copy the extension ID shown on the extension card.
+6. In your ArcGIS OAuth app, add this redirect URI exactly:
+   - `https://<that-extension-id>.chromiumapp.org/`
+7. Save the ArcGIS app changes.
+8. In the extension popup, add an environment with that ArcGIS app's client ID and sign in.
+
+Important:
+- The redirect URI must be an exact match, including protocol, host, and trailing slash.
+- If the Chrome extension ID changes, update the ArcGIS app redirect URI to the new `chromiumapp.org` URL.
 
 ## Lint and Format
 

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ArcGIS API Keys</title>
+    <link rel="stylesheet" href="./ui.css" />
+  </head>
+  <body>
+    <main class="popup-shell">
+      <h1>ArcGIS API Keys</h1>
+      <p id="popup-status" class="status"></p>
+
+      <label class="field">
+        <span>Environment</span>
+        <select id="env-select"></select>
+      </label>
+
+      <div class="row">
+        <button id="sign-in" type="button">Sign In</button>
+        <button id="sign-out" type="button">Sign Out</button>
+      </div>
+
+      <button id="open-explorer" type="button" class="primary">Open Explorer</button>
+
+      <details>
+        <summary>Add Environment</summary>
+        <form id="add-env-form" class="stack">
+          <label class="field">
+            <span>Type</span>
+            <select id="env-type" required>
+              <option value="online">ArcGIS Online</option>
+              <option value="location-platform">Location Platform</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Name</span>
+            <input id="env-name" required />
+          </label>
+
+          <label class="field">
+            <span>Client ID</span>
+            <input id="env-client-id" required />
+          </label>
+
+          <label class="field" id="portal-url-field" hidden>
+            <span>Enterprise Portal URL</span>
+            <input id="env-portal-url" placeholder="https://gis.example.com/portal" />
+          </label>
+
+          <button type="submit">Save Environment</button>
+        </form>
+      </details>
+
+      <p id="popup-error" class="error" hidden></p>
+    </main>
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>
