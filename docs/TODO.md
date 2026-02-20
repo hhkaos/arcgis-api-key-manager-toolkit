@@ -15,7 +15,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 - [ ] Set up esbuild build scripts (root + per-package)
 - [ ] Configure ESLint + Prettier (shared config at root)
 - [ ] Create `.gitignore`
-- [ ] Initialize git repository
+- [x] Initialize git repository
 
 ---
 
