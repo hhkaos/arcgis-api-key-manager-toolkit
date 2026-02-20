@@ -265,6 +265,8 @@ After modal closes:
 - Clear separation between credential configuration and secret value
 - Explicit destructive action warnings (agnostic — warn, don't prescribe)
 - No misleading terminology
+- In VS Code WebView, UI should inherit host theme tokens (`--vscode-*`) so light/dark/high-contrast themes are matched automatically
+- Shared UI should provide safe fallback design tokens when host theme variables are unavailable (for non-VS Code hosts)
 
 ---
 
@@ -420,6 +422,7 @@ Node-specific constructs must be adapted to browser/VS Code environments.
 - Optional backend broker mode
 - Multi-profile support
 - Guided rotation workflow mode
+- Support for additional developer credential types beyond API keys
 
 ---
 

@@ -6,15 +6,23 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ---
 
+## Done
+
+- [x] Implement end-to-end shared core + VS Code credential explorer baseline from current repository diff - 2026-02-20
+- [x] Modernize UI to compact, squared, Material-inspired styling across shared Lit components and VS Code webview shell (unplanned) - 2026-02-20
+- [x] Add dynamic VS Code theme-token adoption (`--vscode-*`) so UI matches active editor theme/profile with safe fallbacks (unplanned) - 2026-02-20
+
+---
+
 ## Phase 0 — Project Scaffolding
 
-- [ ] Initialize root `package.json` with npm workspaces
-- [ ] Create `packages/core/`, `packages/vscode/`, `packages/chrome/` directories
-- [ ] Create root `tsconfig.base.json` (strict, ES2020+)
-- [ ] Create per-package `tsconfig.json` files extending base
-- [ ] Set up esbuild build scripts (root + per-package)
-- [ ] Configure ESLint + Prettier (shared config at root)
-- [ ] Create `.gitignore`
+- [x] Initialize root `package.json` with npm workspaces
+- [x] Create `packages/core/`, `packages/vscode/`, `packages/chrome/` directories
+- [x] Create root `tsconfig.base.json` (strict, ES2020+)
+- [x] Create per-package `tsconfig.json` files extending base
+- [x] Set up esbuild build scripts (root + per-package)
+- [x] Configure ESLint + Prettier (shared config at root)
+- [x] Create `.gitignore`
 - [x] Initialize git repository
 
 ---
@@ -23,77 +31,77 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ### 1.1 Data Model & Types
 
-- [ ] Define `Environment` type (online | location-platform | enterprise)
-- [ ] Define `EnvironmentConfig` interface
-- [ ] Define `AuthToken` interface
-- [ ] Define `ApiKeyCredential` interface
-- [ ] Define `KeySlotStatus` interface
-- [ ] Define `ExpirationCategory` enum (ok, warning, critical, expired)
-- [ ] Define filter and sort types
+- [x] Define `Environment` type (online | location-platform | enterprise)
+- [x] Define `EnvironmentConfig` interface
+- [x] Define `AuthToken` interface
+- [x] Define `ApiKeyCredential` interface
+- [x] Define `KeySlotStatus` interface
+- [x] Define `ExpirationCategory` enum (ok, warning, critical, expired)
+- [x] Define filter and sort types
 
 ### 1.2 Environment Manager
 
-- [ ] Implement `EnvironmentManager` class
-- [ ] `addEnvironment()` — register new environment with client ID
-- [ ] `removeEnvironment()` — remove by ID
-- [ ] `listEnvironments()` — return grouped by product type
-- [ ] `setActiveEnvironment()` / `getActiveEnvironment()`
-- [ ] Wire to `StorageAdapter` interface for persistence
+- [x] Implement `EnvironmentManager` class
+- [x] `addEnvironment()` — register new environment with client ID
+- [x] `removeEnvironment()` — remove by ID
+- [x] `listEnvironments()` — return grouped by product type
+- [x] `setActiveEnvironment()` / `getActiveEnvironment()`
+- [x] Wire to `StorageAdapter` interface for persistence
 
 ### 1.3 ArcGIS REST Client
 
-- [ ] Install `@esri/arcgis-rest-request` and `@esri/arcgis-rest-developer-credentials`
-- [ ] Implement `fetchCredentials()` with silent multi-page pagination
-- [ ] Implement `fetchCredentialDetail()` for single credential
-- [ ] Implement `createApiKey()` for slot 1 or 2
-- [ ] Implement `regenerateApiKey()` for slot 1 or 2
-- [ ] Implement `detectCapabilities()` for Enterprise graceful degradation
-- [ ] Map REST errors to human-readable error types
+- [x] Install `@esri/arcgis-rest-request` and `@esri/arcgis-rest-developer-credentials`
+- [x] Implement `fetchCredentials()` with silent multi-page pagination
+- [x] Implement `fetchCredentialDetail()` for single credential
+- [x] Implement `createApiKey()` for slot 1 or 2
+- [x] Implement `regenerateApiKey()` for slot 1 or 2
+- [x] Implement `detectCapabilities()` for Enterprise graceful degradation
+- [x] Map REST errors to human-readable error types
 
 ### 1.4 Business Logic
 
-- [ ] Implement `categorizeExpiration()` (>30d green, 7-30d yellow, <7d red, expired gray)
-- [ ] Implement `filterCredentials()` (name, tags, privileges, expiration state)
-- [ ] Implement `sortCredentials()` (name, expiration, creation date)
-- [ ] Implement `analyzeReferrers()` (flag wildcards, permissive patterns)
-- [ ] Implement debounce utility
+- [x] Implement `categorizeExpiration()` (>30d green, 7-30d yellow, <7d red, expired gray)
+- [x] Implement `filterCredentials()` (name, tags, privileges, expiration state)
+- [x] Implement `sortCredentials()` (name, expiration, creation date)
+- [x] Implement `analyzeReferrers()` (flag wildcards, permissive patterns)
+- [x] Implement debounce utility
 
 ### 1.5 Platform Adapter Interfaces
 
-- [ ] Define `StorageAdapter` interface
-- [ ] Define `AuthAdapter` interface
-- [ ] Define `ClipboardAdapter` interface
+- [x] Define `StorageAdapter` interface
+- [x] Define `AuthAdapter` interface
+- [x] Define `ClipboardAdapter` interface
 
 ### 1.6 Shared Lit Web Components
 
-- [ ] Install Lit dependency
-- [ ] Implement `<config-gate>` — first-run environment configuration screen
-- [ ] Implement `<sign-in-view>` — sign-in button with error state
-- [ ] Implement `<environment-selector>` — dropdown to switch environments
-- [ ] Implement `<expiration-badge>` — color-coded badge component
-- [ ] Implement `<credential-list>` — searchable, filterable, sortable list
-  - [ ] Search input with debounce
-  - [ ] Filter dropdowns (tag, privilege, expiration)
-  - [ ] Sort selector
-  - [ ] Refresh button
-  - [ ] Credential row rendering with badges
-- [ ] Implement `<credential-detail>` — full detail view
-  - [ ] Metadata section
-  - [ ] Flat privilege list with icons
-  - [ ] Annotated referrer list
-  - [ ] Key 1 / Key 2 status cards with action buttons
-- [ ] Implement `<key-action-modal>` — create/regenerate confirmation + result
-  - [ ] Full context display (name, slot, partial ID, creation date)
-  - [ ] Destructive warning text
-  - [ ] Post-execute key display with copy button
-  - [ ] "Copied!" toast (2s) with clipboard failure fallback
-  - [ ] Auto-purge key value from state on modal close
+- [x] Install Lit dependency
+- [x] Implement `<config-gate>` — first-run environment configuration screen
+- [x] Implement `<sign-in-view>` — sign-in button with error state
+- [x] Implement `<environment-selector>` — dropdown to switch environments
+- [x] Implement `<expiration-badge>` — color-coded badge component
+- [x] Implement `<credential-list>` — searchable, filterable, sortable list
+  - [x] Search input with debounce
+  - [x] Filter dropdowns (tag, privilege, expiration)
+  - [x] Sort selector
+  - [x] Refresh button
+  - [x] Credential row rendering with badges
+- [x] Implement `<credential-detail>` — full detail view
+  - [x] Metadata section
+  - [x] Flat privilege list with icons
+  - [x] Annotated referrer list
+  - [x] Key 1 / Key 2 status cards with action buttons
+- [x] Implement `<key-action-modal>` — create/regenerate confirmation + result
+  - [x] Full context display (name, slot, partial ID, creation date)
+  - [x] Destructive warning text
+  - [x] Post-execute key display with copy button
+  - [x] "Copied!" toast (2s) with clipboard failure fallback
+  - [x] Auto-purge key value from state on modal close
 
 ### 1.7 WebView Messaging Protocol
 
-- [ ] Define message types (host → webview, webview → host)
-- [ ] Implement message serialization/deserialization helpers
-- [ ] Document the protocol (inline TypeScript types are sufficient)
+- [x] Define message types (host → webview, webview → host)
+- [x] Implement message serialization/deserialization helpers
+- [x] Document the protocol (inline TypeScript types are sufficient)
 
 ---
 
@@ -101,54 +109,54 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ### 2.1 Extension Entry Point
 
-- [ ] Create `extension.ts` with `activate()` / `deactivate()`
-- [ ] Register TreeView provider
-- [ ] Register all commands
+- [x] Create `extension.ts` with `activate()` / `deactivate()`
+- [x] Register TreeView provider
+- [x] Register all commands
 
 ### 2.2 Platform Adapters
 
-- [ ] Implement `StorageAdapter` using `SecretStorage` (tokens) + `globalState` (config)
-- [ ] Implement `AuthAdapter` using VS Code authentication API / URI handler
-- [ ] Implement `ClipboardAdapter` using `vscode.env.clipboard`
+- [x] Implement `StorageAdapter` using `SecretStorage` (tokens) + `globalState` (config)
+- [x] Implement `AuthAdapter` using VS Code authentication API / URI handler
+- [x] Implement `ClipboardAdapter` using `vscode.env.clipboard`
 
 ### 2.3 TreeView Provider
 
-- [ ] Implement `TreeDataProvider` for "ArcGIS API Keys" panel
-- [ ] Render root nodes: ArcGIS Online, Location Platform, Enterprise
-- [ ] Render child account nodes with sign-in status icons
-- [ ] Context menu: Sign In, Sign Out, Remove, Refresh
-- [ ] Click handler: open WebView tab for selected account
+- [x] Implement `TreeDataProvider` for "ArcGIS API Keys" panel
+- [x] Render root nodes: ArcGIS Online, Location Platform, Enterprise
+- [x] Render child account nodes with sign-in status icons
+- [x] Context menu: Sign In, Sign Out, Remove, Refresh
+- [x] Click handler: open WebView tab for selected account
 
 ### 2.4 WebView Panel Provider
 
-- [ ] Create `WebviewPanel` per account (editor tab style)
-- [ ] Bundle and load shared Lit components into WebView
-- [ ] Set up Content Security Policy
-- [ ] Implement messaging bridge (WebView ↔ extension host ↔ core REST client)
-- [ ] Handle panel lifecycle (dispose, visibility)
+- [x] Create `WebviewPanel` per account (editor tab style)
+- [x] Bundle and load shared Lit components into WebView
+- [x] Set up Content Security Policy
+- [x] Implement messaging bridge (WebView ↔ extension host ↔ core REST client)
+- [x] Handle panel lifecycle (dispose, visibility)
 
 ### 2.5 OAuth Flow
 
-- [ ] Implement OAuth PKCE flow via VS Code auth API or `env.openExternal` + URI handler
-- [ ] Register URI handler for callback
-- [ ] Exchange auth code for access token
-- [ ] Store token in SecretStorage keyed by environment ID
+- [x] Implement OAuth PKCE flow via VS Code auth API or `env.openExternal` + URI handler
+- [x] Register URI handler for callback
+- [x] Exchange auth code for access token
+- [x] Store token in SecretStorage keyed by environment ID
 - [ ] Handle token expiry: block + re-auth + require user restart
 
 ### 2.6 Commands
 
-- [ ] `arcgis-api-keys.addEnvironment` — prompt for type, client ID, portal URL
-- [ ] `arcgis-api-keys.removeEnvironment` — quick pick selector
-- [ ] `arcgis-api-keys.signIn`
-- [ ] `arcgis-api-keys.signOut`
-- [ ] `arcgis-api-keys.refresh`
+- [x] `arcgis-api-keys.addEnvironment` — prompt for type, client ID, portal URL
+- [x] `arcgis-api-keys.removeEnvironment` — quick pick selector
+- [x] `arcgis-api-keys.signIn`
+- [x] `arcgis-api-keys.signOut`
+- [x] `arcgis-api-keys.refresh`
 
 ### 2.7 Extension Manifest
 
-- [ ] Configure `viewsContainers` and `views` in `package.json`
-- [ ] Configure `commands` contributions
-- [ ] Configure `menus` for TreeView context actions
-- [ ] Set activation events (`onView:arcgisApiKeys`)
+- [x] Configure `viewsContainers` and `views` in `package.json`
+- [x] Configure `commands` contributions
+- [x] Configure `menus` for TreeView context actions
+- [x] Set activation events (`onView:arcgisApiKeys`)
 
 ---
 
@@ -201,13 +209,13 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ### 4.1 Unit Tests
 
-- [ ] Test expiration categorization logic
-- [ ] Test credential filtering (name, tag, privilege, expiration)
-- [ ] Test credential sorting
-- [ ] Test referrer analysis (wildcard detection, annotations)
-- [ ] Test environment manager (add, remove, switch)
-- [ ] Test REST client pagination handling (mocked)
-- [ ] Test REST client error mapping (mocked)
+- [x] Test expiration categorization logic
+- [x] Test credential filtering (name, tag, privilege, expiration)
+- [x] Test credential sorting
+- [x] Test referrer analysis (wildcard detection, annotations)
+- [x] Test environment manager (add, remove, switch)
+- [x] Test REST client pagination handling (mocked)
+- [x] Test REST client error mapping (mocked)
 
 ### 4.2 Manual E2E Testing
 
@@ -231,7 +239,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 - [ ] Package as `.vsix`
 - [ ] Write Marketplace listing description
-- [ ] Document OAuth setup instructions (README)
+- [x] Document OAuth setup instructions (README)
 - [ ] Security review of SecretStorage usage
 
 ### 5.2 Chrome Extension

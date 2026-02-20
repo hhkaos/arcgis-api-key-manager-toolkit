@@ -61,3 +61,4 @@ Use the `/release` skill for versioned releases with tags and GitHub Releases.
 - Tokens cached per environment; switching environments doesn't require re-auth
 - Read-only access to credentials (no admin/org-wide management in v1)
 - Update `CHANGELOG.md`, `docs/TODO.md`, and `docs/SPEC.md` (if relevant) with every commit
+- If expiration date lookup via `https://www.arcgis.com/sharing/rest/portals/self/apiTokens` fails, it may require username/password-based auth in that context; pause and ask the user how to proceed before forcing an auth-mode change.

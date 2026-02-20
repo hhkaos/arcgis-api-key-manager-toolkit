@@ -1,10 +1,10 @@
 ---
-name: release
-description: Create a new versioned release with changelog, git tag, and GitHub Release
-disable-model-invocation: true
+applyTo: "*"
 ---
 
-Follow these steps to create a new release:
+# Release Instructions
+
+Follow these steps when the user asks to create a new versioned release.
 
 ## 1. Review unreleased changes
 
@@ -85,6 +85,8 @@ Stage the modified files by name:
 - `packages/core/package.json`
 - `packages/vscode/package.json`
 - `packages/chrome/package.json`
+
+Never use `git add -A` or `git add .`. Never stage files that may contain secrets (`.env`, credentials, private keys, etc.) — warn the user if any are detected.
 
 Ask the user which alias to use:
 

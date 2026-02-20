@@ -1,10 +1,10 @@
 ---
-name: ship
-description: Run tests, stage changes, generate a commit message, commit using a git alias, and push
-disable-model-invocation: true
+applyTo: "*"
 ---
 
-Follow these steps to commit changes:
+# Ship Instructions
+
+Follow these steps when the user asks to commit and push changes.
 
 ## 1. Review changes
 
@@ -15,8 +15,6 @@ Run `git status` (never use `-uall`) and `git diff` (both staged and unstaged) t
 Run `npm test` from the repo root. If tests fail, stop and inform the user. Do not proceed to staging or committing until tests pass.
 
 ## 3. Update project documentation
-
-Review the changes and update the following files as needed:
 
 ### CHANGELOG.md
 

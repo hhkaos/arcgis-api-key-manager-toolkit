@@ -1,0 +1,23 @@
+{
+  "name": "@arcgis-api-keys/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "tsc -p tsconfig.test.json && node --test \"dist-test/test/**/*.test.js\""
+  },
+  "dependencies": {
+    "@esri/arcgis-rest-developer-credentials": "^4.2.1",
+    "@esri/arcgis-rest-request": "^4.2.1",
+    "lit": "^3.2.1"
+  }
+}

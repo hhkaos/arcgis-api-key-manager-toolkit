@@ -1,0 +1,123 @@
+{
+  "name": "arcgis-api-key-explorer",
+  "displayName": "ArcGIS API Key Explorer",
+  "description": "Explore and manage ArcGIS API key credentials.",
+  "publisher": "local-dev",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:arcgisApiKeys",
+    "onCommand:arcgis-api-keys.addEnvironment",
+    "onCommand:arcgis-api-keys.removeEnvironment",
+    "onCommand:arcgis-api-keys.signIn",
+    "onCommand:arcgis-api-keys.signOut",
+    "onCommand:arcgis-api-keys.refresh",
+    "onCommand:arcgis-api-keys.debugCredentialProbe"
+  ],
+  "main": "dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "arcgisApiKeysContainer",
+          "title": "ArcGIS API Keys",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "arcgisApiKeysContainer": [
+        {
+          "id": "arcgisApiKeys",
+          "name": "ArcGIS API Keys"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "arcgis-api-keys.addEnvironment",
+        "title": "Add Environment",
+        "category": "ArcGIS API Keys",
+        "icon": "$(add)"
+      },
+      {
+        "command": "arcgis-api-keys.removeEnvironment",
+        "title": "Remove Environment",
+        "category": "ArcGIS API Keys",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "arcgis-api-keys.signIn",
+        "title": "Sign In",
+        "category": "ArcGIS API Keys",
+        "icon": "$(account)"
+      },
+      {
+        "command": "arcgis-api-keys.signOut",
+        "title": "Sign Out",
+        "category": "ArcGIS API Keys",
+        "icon": "$(sign-out)"
+      },
+      {
+        "command": "arcgis-api-keys.refresh",
+        "title": "Refresh",
+        "category": "ArcGIS API Keys",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "arcgis-api-keys.debugCredentialProbe",
+        "title": "Debug Credential Probe",
+        "category": "ArcGIS API Keys"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "arcgis-api-keys.addEnvironment",
+          "when": "view == arcgisApiKeys",
+          "group": "navigation@1"
+        },
+        {
+          "command": "arcgis-api-keys.refresh",
+          "when": "view == arcgisApiKeys",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "arcgis-api-keys.removeEnvironment",
+          "when": "view == arcgisApiKeys && viewItem == account",
+          "group": "inline@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ArcGIS API Key Explorer",
+      "properties": {
+        "arcgisApiKeys.debug.verboseHttpLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable verbose extension-host HTTP request/response logging (tokens and key values are redacted)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node ./scripts/build.mjs",
+    "watch": "node ./scripts/build.mjs --watch",
+    "test": "tsc -p tsconfig.test.json && node --test \"dist-test/test/**/*.test.js\""
+  },
+  "dependencies": {
+    "@arcgis-api-keys/core": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.96.0"
+  }
+}
