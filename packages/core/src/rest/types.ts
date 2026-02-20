@@ -53,6 +53,7 @@ export interface ArcGisRestClient {
   createApiKey(options: KeyMutationOptions): Promise<KeyMutationResult>;
   regenerateApiKey(options: KeyMutationOptions): Promise<KeyMutationResult>;
   detectCapabilities(environment: EnvironmentConfig, accessToken: string): Promise<ArcGisClientCapabilities>;
+  getLastResponseValidationWarnings(): string[];
 }
 
 export type RestClientErrorCode =

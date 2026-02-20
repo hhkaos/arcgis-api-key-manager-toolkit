@@ -161,6 +161,17 @@ export class CredentialListElement extends LitElement {
       color: var(--akm-muted);
     }
 
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--akm-border);
+      background: var(--vscode-badge-background, #eff4f9);
+      color: var(--akm-text);
+      border-radius: 0;
+      padding: 2px 6px;
+      font-size: 11px;
+    }
+
     .error {
       color: var(--vscode-errorForeground, #b42318);
       font-size: 12px;
@@ -275,10 +286,21 @@ export class CredentialListElement extends LitElement {
                         <div class="subtle">${credential.tags.join(', ') || 'No tags'}</div>
                       </div>
                       <div>
-                        <expiration-badge .expiration=${credential.expiration}></expiration-badge>
+                        <expiration-badge
+                          .expiration=${credential.expiration}
+                          .nonExpiring=${Boolean(credential.nonExpiring)}
+                        ></expiration-badge>
                       </div>
                       <div class="subtle">${credential.privileges.length} privileges</div>
-                      <div class="subtle">Key1: ${credential.key1.exists ? 'set' : 'missing'} · Key2: ${credential.key2.exists ? 'set' : 'missing'}</div>
+                      <div class="subtle">
+                        ${
+                          credential.isLegacy
+                            ? html`<span class="chip">Legacy API key</span>`
+                            : html`Key1: ${credential.key1.exists ? 'set' : 'missing'} · Key2: ${
+                                credential.key2.exists ? 'set' : 'missing'
+                              }`
+                        }
+                      </div>
                     </button>
                   `
                 )

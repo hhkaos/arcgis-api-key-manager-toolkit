@@ -462,7 +462,8 @@ async function loadCredentialsForEnvironment(
       services.restClient.fetchCredentials({
         environment,
         accessToken
-      })
+      }),
+    fetchWarnings: () => services.restClient.getLastResponseValidationWarnings()
   });
 
   services.webviewPanels.post(panel, message);

@@ -30,6 +30,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Chrome popup now correctly hides the Enterprise portal URL field for non-Enterprise environment types.
 - Chrome popup auth controls now reflect selected environment sign-in state (`Sign In` vs `Sign Out` / `Open Explorer`).
 - Explorer tab now opens automatically after successful Chrome sign-in, and environment add/save works reliably by avoiding DOM imports in the service worker.
+- Chrome manifest validation error caused by an invalid `"permissions"` permission entry; manifest now declares only valid permissions.
+- ArcGIS Online/Location Platform credential loading now includes both new API token-backed credentials and legacy API keys by querying both search filters and merging results.
+- Credential detail/list metadata mapping now hydrates from item + registered app info endpoints so expiration dates, privileges, tags, and key slot existence render correctly in the list/detail UI.
+- Online credential loading now falls back from `/community/self` to `/portals/self` to resolve username robustly when building owner-scoped search filters.
+- Key create/regenerate flow now uses ArcGIS REST JS-style `updateApiKey` slot generation logic for Online/Location Platform, with compatibility fallback to direct portal endpoints.
 
 ---
 

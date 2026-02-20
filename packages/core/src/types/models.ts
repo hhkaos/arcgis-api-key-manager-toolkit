@@ -31,6 +31,8 @@ export interface ApiKeyCredential {
   referrers: string[];
   key1: KeySlotStatus;
   key2: KeySlotStatus;
+  isLegacy?: boolean;
+  nonExpiring?: boolean;
 }
 
 export type ExpirationCategory = 'ok' | 'warning' | 'critical' | 'expired';
@@ -56,4 +58,3 @@ export interface ReferrerAnnotation {
   warning: boolean;
   reason?: 'wildcard-only' | 'permissive-pattern' | 'none';
 }
-

@@ -4,7 +4,7 @@ export interface KeyActionExecuteDetail {
   credentialId: string;
   slot: 1 | 2;
   action: 'create' | 'regenerate';
-  expirationDays?: number;
+  expirationDays: number;
 }
 
 export class KeyActionModalElement extends LitElement {
@@ -19,7 +19,7 @@ export class KeyActionModalElement extends LitElement {
     existingPartialId: { type: String, attribute: 'existing-partial-id' },
     existingCreated: { type: String, attribute: 'existing-created' },
     resultKey: { type: String, attribute: false },
-    expirationDaysInput: { state: true },
+    expirationDateInput: { state: true },
     copyState: { state: true }
   };
 
@@ -207,6 +207,18 @@ export class KeyActionModalElement extends LitElement {
       color: var(--akm-primary-foreground);
     }
 
+    button.primary.create {
+      border-color: #2b8a3e;
+      background: #2b8a3e;
+      color: #ffffff;
+    }
+
+    button.primary.regenerate {
+      border-color: #b42318;
+      background: #b42318;
+      color: #ffffff;
+    }
+
     button:disabled {
       opacity: 0.6;
       cursor: not-allowed;
@@ -224,13 +236,17 @@ export class KeyActionModalElement extends LitElement {
   public existingCreated: string = '';
   public resultKey: string | null = null;
 
-  private expirationDaysInput: string = '';
+  private expirationDateInput: string = '';
   private copyState: 'idle' | 'copied' | 'failed' = 'idle';
   private copyTimer: ReturnType<typeof setTimeout> | null = null;
 
   public override updated(changedProperties: Map<string, unknown>): void {
-    if (changedProperties.has('open') && !this.open) {
-      this.purgeKeyFromState();
+    if (changedProperties.has('open')) {
+      if (!this.open) {
+        this.purgeKeyFromState();
+      } else if (!this.expirationDateInput) {
+        this.expirationDateInput = getDefaultExpirationDateInput();
+      }
     }
   }
 
@@ -250,6 +266,8 @@ export class KeyActionModalElement extends LitElement {
         ? `Regenerate API Key ${this.keySlot}`
         : `Create API Key ${this.keySlot}`;
     const primaryLabel = this.loading ? 'Running...' : title;
+    const minDate = getMinExpirationDateInput();
+    const maxDate = getMaxExpirationDateInput();
 
     return html`
       <div class="backdrop" @click=${this.handleClose}></div>
@@ -266,16 +284,17 @@ export class KeyActionModalElement extends LitElement {
         <div class="warning">Regeneration permanently invalidates the previous key. This action cannot be undone.</div>
 
         <label class="field">
-          Optional Expiration (days)
+          Expiration Date (required)
           <input
-            type="number"
-            min="1"
-            step="1"
-            .value=${this.expirationDaysInput}
-            @input=${this.handleExpirationInput}
+            type="date"
+            .value=${this.expirationDateInput}
+            min=${minDate}
+            max=${maxDate}
+            required
+            @input=${this.handleExpirationDateInput}
             ?disabled=${this.loading}
-            placeholder="Leave blank for default"
           />
+          <span>Select between tomorrow and ${maxDate}. Default is +60 days.</span>
         </label>
 
         ${
@@ -303,7 +322,12 @@ export class KeyActionModalElement extends LitElement {
 
         <div class="actions">
           <button type="button" @click=${this.handleClose} ?disabled=${this.loading}>Close</button>
-          <button type="button" class="primary" @click=${this.handleExecute} ?disabled=${this.loading || !this.credentialId}>
+          <button
+            type="button"
+            class="primary ${this.action}"
+            @click=${this.handleExecute}
+            ?disabled=${this.loading || !this.credentialId}
+          >
             ${primaryLabel}
           </button>
         </div>
@@ -311,12 +335,16 @@ export class KeyActionModalElement extends LitElement {
     `;
   }
 
-  private handleExpirationInput(event: Event): void {
-    this.expirationDaysInput = (event.target as HTMLInputElement).value;
+  private handleExpirationDateInput(event: Event): void {
+    this.expirationDateInput = (event.target as HTMLInputElement).value;
   }
 
   private handleExecute(): void {
-    const expirationDays = this.parseExpirationDays();
+    const expirationDays = this.parseExpirationDaysFromDate();
+    if (!expirationDays) {
+      this.errorMessage = 'Expiration date is required and must be between tomorrow and 365 days.';
+      return;
+    }
 
     this.dispatchEvent(
       new CustomEvent<KeyActionExecuteDetail>('key-action-execute', {
@@ -358,25 +386,32 @@ export class KeyActionModalElement extends LitElement {
     );
   }
 
-  private parseExpirationDays(): number | undefined {
-    const value = this.expirationDaysInput.trim();
+  private parseExpirationDaysFromDate(): number | undefined {
+    const value = this.expirationDateInput.trim();
     if (!value) {
       return undefined;
     }
 
-    const parsed = Number.parseInt(value, 10);
-    if (Number.isNaN(parsed) || parsed <= 0) {
+    const selectedAt = Date.parse(`${value}T00:00:00`);
+    if (Number.isNaN(selectedAt)) {
       return undefined;
     }
 
-    return parsed;
+    const now = new Date();
+    const todayAt = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const days = Math.round((selectedAt - todayAt) / 86_400_000);
+    if (days < 1 || days > 365) {
+      return undefined;
+    }
+
+    return days;
   }
 
   private purgeKeyFromState(): void {
     this.resultKey = null;
     this.copyState = 'idle';
     this.errorMessage = '';
-    this.expirationDaysInput = '';
+    this.expirationDateInput = '';
     const textarea = this.renderRoot.querySelector<HTMLTextAreaElement>('#generated-key');
     if (textarea) {
       textarea.value = '';
@@ -411,4 +446,29 @@ export class KeyActionModalElement extends LitElement {
 
 if (!customElements.get('key-action-modal')) {
   customElements.define('key-action-modal', KeyActionModalElement);
+}
+
+function formatDateInput(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getMinExpirationDateInput(): string {
+  const value = new Date();
+  value.setDate(value.getDate() + 1);
+  return formatDateInput(value);
+}
+
+function getMaxExpirationDateInput(): string {
+  const value = new Date();
+  value.setDate(value.getDate() + 365);
+  return formatDateInput(value);
+}
+
+function getDefaultExpirationDateInput(): string {
+  const value = new Date();
+  value.setDate(value.getDate() + 60);
+  return formatDateInput(value);
 }

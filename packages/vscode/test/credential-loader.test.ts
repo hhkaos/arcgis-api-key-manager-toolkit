@@ -85,3 +85,21 @@ test('sorts credentials by created desc by default', async () => {
   assert.equal(message.type, 'host/credentials');
   assert.deepEqual(message.payload.credentials.map((credential) => credential.id), ['newer', 'older']);
 });
+
+test('includes response validation warnings in credentials payload when provided', async () => {
+  const message = await buildCredentialLoadMessage({
+    token: {
+      accessToken: 'ok',
+      expiresAt: Date.now() + 60_000,
+      tokenType: 'Bearer'
+    },
+    fetchCredentials: async () => [baseCredential],
+    fetchWarnings: () => ['Response validation warning: missing field "owner" in first /search response.']
+  });
+
+  assert.equal(message.type, 'host/credentials');
+  const warnings = (message.payload as Record<string, unknown>).warnings as string[] | undefined;
+  assert.deepEqual(warnings, [
+    'Response validation warning: missing field "owner" in first /search response.'
+  ]);
+});

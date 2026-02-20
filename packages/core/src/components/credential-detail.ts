@@ -157,6 +157,18 @@ export class CredentialDetailElement extends LitElement {
       font-size: 12px;
     }
 
+    button.create {
+      border-color: #2b8a3e;
+      background: #2b8a3e;
+      color: #ffffff;
+    }
+
+    button.regenerate {
+      border-color: #b42318;
+      background: #b42318;
+      color: #ffffff;
+    }
+
     button:focus {
       outline: 2px solid var(--akm-focus);
       outline-offset: 1px;
@@ -217,7 +229,12 @@ export class CredentialDetailElement extends LitElement {
             </div>
             <div>
               <div class="label">Expiration</div>
-              <div class="value"><expiration-badge .expiration=${this.credential.expiration}></expiration-badge></div>
+              <div class="value">
+                <expiration-badge
+                  .expiration=${this.credential.expiration}
+                  .nonExpiring=${Boolean(this.credential.nonExpiring)}
+                ></expiration-badge>
+              </div>
             </div>
             <div>
               <div class="label">Tags</div>
@@ -260,10 +277,14 @@ export class CredentialDetailElement extends LitElement {
 
         <div class="section">
           <h3>API Key Slots</h3>
-          <div class="slot-grid">
-            ${this.renderSlotCard(this.credential.key1)}
-            ${this.renderSlotCard(this.credential.key2)}
-          </div>
+          ${
+            this.credential.isLegacy
+              ? html`<div class="chip-list"><span class="chip">Legacy API key</span></div>`
+              : html`<div class="slot-grid">
+                  ${this.renderSlotCard(this.credential.key1)}
+                  ${this.renderSlotCard(this.credential.key2)}
+                </div>`
+          }
         </div>
       </section>
     `;
@@ -281,7 +302,12 @@ export class CredentialDetailElement extends LitElement {
         </div>
         <div class="note">Partial ID: ${slot.partialId ?? 'N/A'}</div>
         <div class="note">Created: ${slot.created ? new Date(slot.created).toLocaleString() : 'N/A'}</div>
-        <button type="button" @click=${() => this.requestKeyAction(slot.slot, action)} ?disabled=${this.loading}>
+        <button
+          type="button"
+          class=${action}
+          @click=${() => this.requestKeyAction(slot.slot, action)}
+          ?disabled=${this.loading}
+        >
           ${buttonText}
         </button>
       </div>

@@ -3,6 +3,7 @@ import type { ApiKeyCredential, AuthToken, HostToWebviewMessage } from '@arcgis-
 interface CredentialLoaderInput {
   token: AuthToken | null;
   fetchCredentials: (accessToken: string) => Promise<ApiKeyCredential[]>;
+  fetchWarnings?: () => string[];
   nowMs?: number;
 }
 
@@ -36,12 +37,15 @@ export async function buildCredentialLoadMessage(
   try {
     const credentials = await input.fetchCredentials(input.token.accessToken);
     const sortedCredentials = sortByCreatedDesc(credentials);
+    const payload: { credentials: ApiKeyCredential[] } = { credentials: sortedCredentials };
+    const warnings = input.fetchWarnings?.() ?? [];
+    if (warnings.length > 0) {
+      (payload as Record<string, unknown>).warnings = warnings;
+    }
 
     return {
       type: 'host/credentials',
-      payload: {
-        credentials: sortedCredentials
-      }
+      payload
     };
   } catch (error) {
     const mapped = mapError(error);

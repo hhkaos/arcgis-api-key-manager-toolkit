@@ -6,6 +6,7 @@ import {
   mapRestError,
   serializeMessage,
   type ArcGisRestClient,
+  type ApiKeyCredential,
   type EnvironmentConfig,
   type HostToWebviewMessage,
   type RestClientError,
@@ -169,14 +170,19 @@ async function handleWebviewMessage(
           environment,
           accessToken: token.accessToken
         });
+        const payload: { credentials: ApiKeyCredential[] } = {
+          credentials: [...credentials].sort(
+            (left, right) => Date.parse(right.created) - Date.parse(left.created)
+          )
+        };
+        const warnings = services.restClient.getLastResponseValidationWarnings();
+        if (warnings.length > 0) {
+          (payload as Record<string, unknown>).warnings = warnings;
+        }
 
         return {
           type: 'host/credentials',
-          payload: {
-            credentials: [...credentials].sort(
-              (left, right) => Date.parse(right.created) - Date.parse(left.created)
-            )
-          }
+          payload
         };
       } catch (error) {
         return toHostErrorPayload(error);

@@ -4,7 +4,8 @@ import type { ExpirationCategory } from '../types/models.js';
 
 export class ExpirationBadgeElement extends LitElement {
   public static override properties = {
-    expiration: { type: String }
+    expiration: { type: String },
+    nonExpiring: { type: Boolean, attribute: 'non-expiring' }
   };
 
   public static override styles = css`
@@ -54,8 +55,13 @@ export class ExpirationBadgeElement extends LitElement {
   `;
 
   public expiration: string = '';
+  public nonExpiring: boolean = false;
 
   public override render() {
+    if (this.nonExpiring) {
+      return html`<span class="badge ok">Doesn't expires</span>`;
+    }
+
     const category = this.getCategory();
     const text = this.getLabel(category);
 

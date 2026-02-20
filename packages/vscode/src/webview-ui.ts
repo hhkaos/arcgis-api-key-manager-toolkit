@@ -47,12 +47,15 @@ const vscode = acquireVsCodeApi();
 
 class ArcgisApiKeysAppElement extends HTMLElement {
   private readonly statusEl = document.createElement('p');
+  private readonly loadingEl = document.createElement('div');
   private readonly infoEl = document.createElement('p');
+  private readonly warningEl = document.createElement('p');
   private readonly errorEl = document.createElement('p');
   private readonly actionsEl = document.createElement('div');
   private readonly signInButton = document.createElement('button');
   private readonly signOutButton = document.createElement('button');
   private readonly refreshButton = document.createElement('button');
+  private readonly backButton = document.createElement('button');
   private readonly credentialsEl = document.createElement('credential-list') as CredentialListElement;
   private readonly detailEl = document.createElement('credential-detail') as CredentialDetailElement;
   private readonly modalEl = document.createElement('key-action-modal') as KeyActionModalElement;
@@ -61,6 +64,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   private credentials: ApiKeyCredential[] = [];
   private selectedCredentialId: string | null = null;
   private selectedCredential: ApiKeyCredential | null = null;
+  private detailMode: boolean = false;
 
   public connectedCallback(): void {
     this.render();
@@ -87,11 +91,25 @@ class ArcgisApiKeysAppElement extends HTMLElement {
 
     this.statusEl.style.margin = '0';
 
+    this.loadingEl.style.display = 'none';
+    this.loadingEl.style.alignItems = 'center';
+    this.loadingEl.style.gap = '8px';
+    this.loadingEl.style.fontSize = '12px';
+    this.loadingEl.style.color = 'var(--vscode-descriptionForeground, #4d5a69)';
+    this.loadingEl.innerHTML =
+      '<progress style="width: 120px;"></progress><span>Loading API keys...</span>';
+
     this.infoEl.textContent =
       'Credential list/detail and key actions are now wired through the extension host.';
     this.infoEl.style.margin = '0';
     this.infoEl.style.color = 'var(--vscode-descriptionForeground, #4d5a69)';
     this.infoEl.style.fontSize = '12px';
+
+    this.warningEl.style.margin = '0';
+    this.warningEl.style.color = 'var(--vscode-editorWarning-foreground, #8a4b00)';
+    this.warningEl.style.fontWeight = '600';
+    this.warningEl.style.fontSize = '12px';
+    this.warningEl.hidden = true;
 
     this.errorEl.style.margin = '0';
     this.errorEl.style.color = 'var(--vscode-errorForeground, #b42318)';
@@ -107,6 +125,11 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     setupButton(this.signInButton, 'Sign in with ArcGIS');
     setupButton(this.signOutButton, 'Sign out');
     setupButton(this.refreshButton, 'Refresh Credentials');
+    setupButton(this.backButton, '← Back to List');
+    this.backButton.style.background = 'var(--vscode-button-background, #0b63ce)';
+    this.backButton.style.color = 'var(--vscode-button-foreground, #ffffff)';
+    this.backButton.style.borderColor = 'var(--vscode-button-background, #0b63ce)';
+    this.backButton.style.fontWeight = '700';
 
     this.signInButton.addEventListener('click', () => {
       this.clearError();
@@ -125,6 +148,11 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.refreshButton.addEventListener('click', () => {
       this.loadCredentials();
     });
+    this.backButton.addEventListener('click', () => {
+      this.detailMode = false;
+      this.syncUiState();
+      this.statusEl.textContent = `Loaded ${this.credentials.length} credentials.`;
+    });
 
     this.credentialsEl.addEventListener('credential-refresh', () => {
       this.loadCredentials();
@@ -140,6 +168,8 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.credentialsEl.selectedCredentialId = detail.credentialId;
       this.detailEl.loading = true;
       this.detailEl.errorMessage = '';
+      this.detailMode = true;
+      this.syncUiState();
 
       this.post({
         type: 'webview/load-credential-detail',
@@ -196,19 +226,32 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.credentialsEl.selectedCredentialId = null;
     this.credentialsEl.loading = false;
     this.credentialsEl.errorMessage = '';
+    this.credentialsEl.style.display = '';
 
     this.detailEl.credential = null;
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
+    this.detailEl.style.display = 'none';
 
     this.modalEl.open = false;
     this.modalEl.loading = false;
     this.modalEl.errorMessage = '';
     this.modalEl.resultKey = null;
 
-    this.actionsEl.append(this.signInButton, this.signOutButton, this.refreshButton);
+    this.actionsEl.append(this.signInButton, this.signOutButton, this.refreshButton, this.backButton);
 
-    root.append(title, this.statusEl, this.infoEl, this.errorEl, this.actionsEl, this.credentialsEl, this.detailEl, this.modalEl);
+    root.append(
+      title,
+      this.statusEl,
+      this.loadingEl,
+      this.infoEl,
+      this.warningEl,
+      this.errorEl,
+      this.actionsEl,
+      this.credentialsEl,
+      this.detailEl,
+      this.modalEl
+    );
 
     this.replaceChildren(root);
     this.syncUiState();
@@ -224,6 +267,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
         this.loadCredentials();
       } else {
         this.clearCredentialState();
+        this.detailMode = false;
       }
 
       return;
@@ -246,6 +290,8 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.detailEl.loading = false;
       this.modalEl.loading = false;
       this.modalEl.errorMessage = message.payload.message;
+      this.setKeysLoading(false);
+      this.syncWarnings([]);
       this.syncUiState();
       return;
     }
@@ -257,6 +303,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.credentialsEl.loading = false;
       this.credentialsEl.errorMessage = '';
       this.credentialsEl.credentials = this.credentials;
+      this.setKeysLoading(false);
 
       if (!this.selectedCredentialId || !this.credentials.some((item) => item.id === this.selectedCredentialId)) {
         this.selectedCredentialId = this.credentials[0]?.id ?? null;
@@ -264,8 +311,9 @@ class ArcgisApiKeysAppElement extends HTMLElement {
 
       this.credentialsEl.selectedCredentialId = this.selectedCredentialId;
       this.statusEl.textContent = `Loaded ${message.payload.credentials.length} credentials.`;
+      this.syncWarnings(readWarningsFromPayload(message.payload));
 
-      if (this.selectedCredentialId) {
+      if (this.detailMode && this.selectedCredentialId) {
         this.detailEl.loading = true;
         this.detailEl.errorMessage = '';
         this.post({
@@ -286,6 +334,8 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.detailEl.credential = message.payload.credential;
       this.detailEl.loading = false;
       this.detailEl.errorMessage = '';
+      this.detailMode = true;
+      this.syncUiState();
       this.statusEl.textContent = `Viewing ${message.payload.credential.name}.`;
       return;
     }
@@ -305,13 +355,16 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.signInButton.hidden = !(this.authState === 'logged-out' || this.authState === 'logging-in');
     this.signOutButton.hidden = !(this.authState === 'logged-in' || this.authState === 'logging-out');
     this.refreshButton.hidden = this.authState !== 'logged-in';
+    this.backButton.hidden = this.authState !== 'logged-in' || !this.detailMode;
 
     this.signInButton.disabled = isBusy;
     this.signOutButton.disabled = isBusy;
     this.refreshButton.disabled = isBusy;
+    this.backButton.disabled = isBusy;
 
-    this.credentialsEl.hidden = this.authState !== 'logged-in';
-    this.detailEl.hidden = this.authState !== 'logged-in';
+    this.credentialsEl.hidden = this.authState !== 'logged-in' || this.detailMode;
+    this.detailEl.hidden = this.authState !== 'logged-in' || !this.detailMode;
+    this.syncMasterDetailVisibility();
 
     if (this.authState === 'checking') {
       this.statusEl.textContent = 'Checking sign-in status...';
@@ -332,6 +385,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.clearError();
     this.credentialsEl.loading = true;
     this.credentialsEl.errorMessage = '';
+    this.setKeysLoading(true);
     this.statusEl.textContent = 'Loading credentials...';
     this.post({ type: 'webview/load-credentials', payload: { refresh: true } });
   }
@@ -340,6 +394,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.credentials = [];
     this.selectedCredentialId = null;
     this.selectedCredential = null;
+    this.detailMode = false;
 
     this.credentialsEl.credentials = [];
     this.credentialsEl.selectedCredentialId = null;
@@ -354,6 +409,9 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.modalEl.loading = false;
     this.modalEl.errorMessage = '';
     this.modalEl.resultKey = null;
+    this.setKeysLoading(false);
+    this.syncWarnings([]);
+    this.syncMasterDetailVisibility();
   }
 
   private post(message: WebviewToHostMessage): void {
@@ -363,6 +421,28 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   private clearError(): void {
     this.errorEl.hidden = true;
     this.errorEl.textContent = '';
+  }
+
+  private syncWarnings(warnings: string[]): void {
+    if (warnings.length === 0) {
+      this.warningEl.hidden = true;
+      this.warningEl.textContent = '';
+      return;
+    }
+
+    this.warningEl.hidden = false;
+    this.warningEl.textContent = warnings.join(' ');
+  }
+
+  private setKeysLoading(loading: boolean): void {
+    this.loadingEl.style.display = loading ? 'flex' : 'none';
+  }
+
+  private syncMasterDetailVisibility(): void {
+    const isLoggedIn = this.authState === 'logged-in';
+    const showDetail = isLoggedIn && this.detailMode;
+    this.credentialsEl.style.display = showDetail ? 'none' : '';
+    this.detailEl.style.display = showDetail ? '' : 'none';
   }
 }
 
@@ -379,6 +459,19 @@ function setupButton(button: HTMLButtonElement, label: string): void {
   button.style.background = 'var(--vscode-button-secondaryBackground, var(--vscode-editor-background, #ffffff))';
   button.style.cursor = 'pointer';
   button.style.color = 'var(--vscode-button-secondaryForeground, var(--vscode-editor-foreground, #18202a))';
+}
+
+function readWarningsFromPayload(payload: unknown): string[] {
+  if (typeof payload !== 'object' || payload === null || !('warnings' in payload)) {
+    return [];
+  }
+
+  const warnings = (payload as { warnings?: unknown }).warnings;
+  if (!Array.isArray(warnings)) {
+    return [];
+  }
+
+  return warnings.filter((warning): warning is string => typeof warning === 'string');
 }
 
 if (!customElements.get('arcgis-api-keys-app')) {

@@ -8,6 +8,9 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ## Done
 
+- [x] Fix Online credential retrieval to merge new API token credentials and legacy API key items, then hydrate list/detail metadata (expiration, privileges, key-slot status, tags/referrers) from item + registered app endpoints - 2026-02-20
+- [x] Fix Chrome manifest invalid permission declaration (`permissions` entry) to remove extension warning/error - 2026-02-20
+- [x] Align Online/Location Platform key create/regenerate logic with ArcGIS REST JS `updateApiKey` slot-generation behavior, with endpoint fallback compatibility - 2026-02-20
 - [x] Implement end-to-end shared core + VS Code credential explorer baseline from current repository diff - 2026-02-20
 - [x] Modernize UI to compact, squared, Material-inspired styling across shared Lit components and VS Code webview shell (unplanned) - 2026-02-20
 - [x] Add dynamic VS Code theme-token adoption (`--vscode-*`) so UI matches active editor theme/profile with safe fallbacks (unplanned) - 2026-02-20
