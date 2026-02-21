@@ -1,5 +1,10 @@
 import type { ApiKeyCredential, EnvironmentConfig } from '../types/models.js';
-import type { ArcGisClientCapabilities, KeyMutationResult, RestClientError } from '../rest/types.js';
+import type {
+  ArcGisClientCapabilities,
+  KeyMutationAction,
+  KeyMutationResult,
+  RestClientError
+} from '../rest/types.js';
 
 export type MessageDirection = 'host-to-webview' | 'webview-to-host';
 
@@ -16,7 +21,7 @@ export interface CredentialsQuery {
 export interface CredentialKeyActionRequest {
   credentialId: string;
   slot: 1 | 2;
-  action: 'create' | 'regenerate';
+  action: KeyMutationAction;
   expirationDays?: number;
 }
 

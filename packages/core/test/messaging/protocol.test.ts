@@ -20,6 +20,34 @@ test('serializeMessage + deserializeMessage roundtrip', () => {
   assert.deepEqual(parsed, message);
 });
 
+test('serializeMessage + deserializeMessage supports key revoke action payloads', () => {
+  const request: WebviewProtocolMessage = {
+    type: 'webview/key-action',
+    requestId: 'req-key-action',
+    payload: {
+      credentialId: 'item-id',
+      slot: 2,
+      action: 'revoke'
+    }
+  };
+  const requestRoundTrip = deserializeMessage(serializeMessage(request));
+  assert.deepEqual(requestRoundTrip, request);
+
+  const response: WebviewProtocolMessage = {
+    type: 'host/key-action-result',
+    requestId: 'req-key-action',
+    payload: {
+      result: {
+        action: 'revoke',
+        slot: 2,
+        credentialId: 'item-id'
+      }
+    }
+  };
+  const responseRoundTrip = deserializeMessage(serializeMessage(response));
+  assert.deepEqual(responseRoundTrip, response);
+});
+
 test('deserializeMessage rejects invalid messages', () => {
   assert.throws(() => deserializeMessage('{"type":"unknown","payload":{}}'));
   assert.throws(() => deserializeMessage('{"type":"webview/sign-in","payload":"bad"}'));

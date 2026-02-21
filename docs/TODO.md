@@ -60,6 +60,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 - [x] Implement `fetchCredentialDetail()` for single credential
 - [x] Implement `createApiKey()` for slot 1 or 2
 - [x] Implement `regenerateApiKey()` for slot 1 or 2
+- [x] Implement `revokeApiKey()` for slot 1 or 2
 - [x] Implement `detectCapabilities()` for Enterprise graceful degradation
 - [x] Map REST errors to human-readable error types
 

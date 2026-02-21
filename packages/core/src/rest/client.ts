@@ -7,6 +7,7 @@ import type {
   ArcGisRestTransport,
   FetchCredentialDetailOptions,
   FetchCredentialsOptions,
+  KeyMutationAction,
   KeyMutationOptions,
   KeyMutationResult
 } from './types.js';
@@ -24,12 +25,22 @@ interface PortalCapabilitiesResponse {
 }
 
 interface KeyMutationResponse {
-  key?: string;
+  success?: boolean;
 }
 
-interface RestJsKeyMutationResponse {
-  accessToken1?: string;
-  accessToken2?: string;
+interface OAuthTokenMutationResponse {
+  access_token?: string;
+}
+
+interface RegisteredAppInfoResponse {
+  client_id?: string;
+  clientId?: string;
+  client_secret?: string;
+  clientSecret?: string;
+}
+
+interface ItemOwnerResponse {
+  owner?: string;
 }
 
 interface CommunitySelfResponse {
@@ -199,6 +210,10 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
     return this.runKeyMutation(options, 'regenerate');
   }
 
+  public async revokeApiKey(options: KeyMutationOptions): Promise<KeyMutationResult> {
+    return this.runKeyMutation(options, 'revoke');
+  }
+
   public async detectCapabilities(
     environment: EnvironmentConfig,
     accessToken: string
@@ -251,106 +266,167 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
 
   private async runKeyMutation(
     options: KeyMutationOptions,
-    action: 'create' | 'regenerate'
+    action: KeyMutationAction
   ): Promise<KeyMutationResult> {
-    if (options.environment.type === 'online' || options.environment.type === 'location-platform') {
-      try {
-        const key = await this.runKeyMutationWithRestJs(options);
-        return {
-          key,
-          slot: options.slot,
-          credentialId: options.credentialId
-        };
-      } catch {
-        // Fall back to direct endpoint calls for compatibility.
-      }
-    }
-
     try {
-      const response = await this.transport.request<KeyMutationResponse>({
-        path: `/portals/self/apiKeys/${options.credentialId}/keys/${options.slot}/${action}`,
-        method: 'POST',
-        environment: options.environment,
-        accessToken: options.accessToken,
-        body: {
-          expirationDays: options.expirationDays,
-          f: 'json'
-        }
-      });
-
-      if (!response.key) {
-        throw {
-          error: {
-            code: 500,
-            message: 'ArcGIS response did not include a key value.'
-          }
-        };
-      }
-
-      return {
-        key: response.key,
-        slot: options.slot,
-        credentialId: options.credentialId
-      };
+      return await this.runDocumentedKeyMutationFlow(options, action);
     } catch (error) {
       throw mapRestError(error);
     }
   }
 
-  private async runKeyMutationWithRestJs(options: KeyMutationOptions): Promise<string> {
-    const portal = getArcGisRestBaseUrl(options.environment);
-    const requestModule = await importArcGisRestModule('@esri/arcgis-rest-request');
-    const credentialsModule = await importArcGisRestModule('@esri/arcgis-rest-developer-credentials');
+  private async runDocumentedKeyMutationFlow(
+    options: KeyMutationOptions,
+    action: KeyMutationAction
+  ): Promise<KeyMutationResult> {
+    const registration = await this.resolveRegisteredAppCredentials(options);
 
-    const identityManager = (
-      requestModule as {
-        ArcGISIdentityManager?: {
-          fromToken(options: { token: string; portal: string }): Promise<unknown>;
+    if (action !== 'revoke') {
+      await this.updateApiTokenExpiration(registration.owner, options);
+    }
+
+    if (action === 'revoke') {
+      const response = await this.transport.request<KeyMutationResponse>({
+        path: '/oauth2/revokeToken',
+        method: 'POST',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        body: {
+          f: 'json',
+          client_id: registration.clientId,
+          client_secret: registration.clientSecret,
+          apiToken: options.slot
+        }
+      });
+
+      if (response.success === false) {
+        throw {
+          error: {
+            code: 500,
+            message: 'ArcGIS response did not confirm key revocation.'
+          }
         };
       }
-    ).ArcGISIdentityManager;
-    const updateApiKey = (
-      credentialsModule as {
-        updateApiKey?: (options: Record<string, unknown>) => Promise<RestJsKeyMutationResponse>;
-      }
-    ).updateApiKey;
 
-    if (!identityManager || !updateApiKey) {
-      throw {
-        error: {
-          code: 500,
-          message:
-            'ArcGIS REST JS key management modules are unavailable. Install @esri/arcgis-rest-request and @esri/arcgis-rest-developer-credentials.'
-        }
+      return {
+        action,
+        slot: options.slot,
+        credentialId: options.credentialId
       };
     }
 
-    const authentication = await identityManager.fromToken({
-      token: options.accessToken,
-      portal
+    const response = await this.transport.request<OAuthTokenMutationResponse>({
+      path: '/oauth2/token',
+      method: 'POST',
+      environment: options.environment,
+      accessToken: options.accessToken,
+      body: {
+        f: 'json',
+        client_id: registration.clientId,
+        client_secret: registration.clientSecret,
+        grant_type: 'client_credentials',
+        apiToken: options.slot,
+        regenerateApiToken: action === 'regenerate'
+      }
     });
 
-    const expirationDate = toApiTokenExpirationDate(options.expirationDays);
-    const response = (await updateApiKey({
-      itemId: options.credentialId,
-      authentication,
-      generateToken1: options.slot === 1,
-      generateToken2: options.slot === 2,
-      apiToken1ExpirationDate: options.slot === 1 ? expirationDate : undefined,
-      apiToken2ExpirationDate: options.slot === 2 ? expirationDate : undefined
-    })) as RestJsKeyMutationResponse;
-
-    const key = options.slot === 1 ? response.accessToken1 : response.accessToken2;
+    const key = readLooseString(response.access_token);
     if (!key) {
       throw {
         error: {
           code: 500,
-          message: 'ArcGIS response did not include a regenerated key value.'
+          message: 'ArcGIS response did not include an API key value.'
         }
       };
     }
 
-    return key;
+    return {
+      action,
+      key,
+      slot: options.slot,
+      credentialId: options.credentialId
+    };
+  }
+
+  private async resolveRegisteredAppCredentials(
+    options: KeyMutationOptions
+  ): Promise<{ owner: string; clientId: string; clientSecret: string }> {
+    const item = await this.transport.request<ItemOwnerResponse>({
+      path: `/content/items/${encodeURIComponent(options.credentialId)}`,
+      method: 'GET',
+      environment: options.environment,
+      accessToken: options.accessToken,
+      query: { f: 'json' }
+    });
+
+    const owner = readLooseString(item.owner);
+    if (!owner) {
+      throw {
+        error: {
+          code: 500,
+          message: 'ArcGIS item response did not include an owner for this API key.'
+        }
+      };
+    }
+
+    const registered = await this.transport.request<RegisteredAppInfoResponse>({
+      path: `/content/users/${encodeURIComponent(owner)}/items/${encodeURIComponent(
+        options.credentialId
+      )}/registeredAppInfo`,
+      method: 'GET',
+      environment: options.environment,
+      accessToken: options.accessToken,
+      query: { f: 'json' }
+    });
+
+    const clientId = readLooseString(registered.client_id) ?? readLooseString(registered.clientId);
+    const clientSecret =
+      readLooseString(registered.client_secret) ?? readLooseString(registered.clientSecret);
+    if (!clientId || !clientSecret) {
+      throw {
+        error: {
+          code: 500,
+          message: 'ArcGIS registered app info did not include client credentials.'
+        }
+      };
+    }
+
+    return { owner, clientId, clientSecret };
+  }
+
+  private async updateApiTokenExpiration(owner: string, options: KeyMutationOptions): Promise<void> {
+    const expirationDate = toApiTokenExpirationDate(options.expirationDays);
+    if (!expirationDate) {
+      throw {
+        error: {
+          code: 400,
+          message: 'Expiration date is required to generate or regenerate an API key.'
+        }
+      };
+    }
+
+    const response = await this.transport.request<{ success?: boolean }>({
+      path: `/content/users/${encodeURIComponent(owner)}/items/${encodeURIComponent(
+        options.credentialId
+      )}/update`,
+      method: 'POST',
+      environment: options.environment,
+      accessToken: options.accessToken,
+      body: {
+        f: 'json',
+        apiToken1ExpirationDate: options.slot === 1 ? expirationDate.getTime() : undefined,
+        apiToken2ExpirationDate: options.slot === 2 ? expirationDate.getTime() : undefined
+      }
+    });
+
+    if (response.success === false) {
+      throw {
+        error: {
+          code: 500,
+          message: 'ArcGIS did not confirm the API token expiration update.'
+        }
+      };
+    }
   }
 
   private async fetchCredentialsFromPath(
@@ -961,13 +1037,6 @@ function toApiTokenExpirationDate(expirationDays: number | undefined): Date | un
   expiration.setDate(expiration.getDate() + expirationDays);
   expiration.setHours(23, 59, 59, 999);
   return expiration;
-}
-
-function importArcGisRestModule(moduleName: string): Promise<unknown> {
-  const dynamicImport = new Function('moduleName', 'return import(moduleName);') as (
-    moduleName: string
-  ) => Promise<unknown>;
-  return dynamicImport(moduleName);
 }
 
 function readNested(root: Record<string, unknown>, path: string[]): unknown {

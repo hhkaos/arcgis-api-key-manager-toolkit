@@ -233,13 +233,20 @@ async function handleWebviewMessage(
                 slot: message.payload.slot,
                 expirationDays: message.payload.expirationDays
               })
-            : await services.restClient.regenerateApiKey({
-                environment,
-                accessToken,
-                credentialId: message.payload.credentialId,
-                slot: message.payload.slot,
-                expirationDays: message.payload.expirationDays
-              });
+            : message.payload.action === 'regenerate'
+              ? await services.restClient.regenerateApiKey({
+                  environment,
+                  accessToken,
+                  credentialId: message.payload.credentialId,
+                  slot: message.payload.slot,
+                  expirationDays: message.payload.expirationDays
+                })
+              : await services.restClient.revokeApiKey({
+                  environment,
+                  accessToken,
+                  credentialId: message.payload.credentialId,
+                  slot: message.payload.slot
+                });
 
         return {
           type: 'host/key-action-result',

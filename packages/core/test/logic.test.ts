@@ -42,8 +42,10 @@ test('categorizeExpiration matches v1 thresholds', () => {
   assert.equal(categorizeExpiration('2026-02-19T00:00:00.000Z', now), 'expired');
 });
 
-test('filterCredentials supports search/tag/privilege', () => {
+test('filterCredentials supports search/tag/privilege including partial referrer match', () => {
   assert.equal(filterCredentials(credentials, { search: 'prod' }).length, 1);
+  assert.equal(filterCredentials(credentials, { search: 'dev.example' })[0]?.id, 'b');
+  assert.equal(filterCredentials(credentials, { search: 'EXAMPLE.COM' }).length, 1);
   assert.equal(filterCredentials(credentials, { tag: 'dev' })[0]?.id, 'b');
   assert.equal(filterCredentials(credentials, { privilege: 'routing' })[0]?.id, 'b');
 });
@@ -69,4 +71,3 @@ test('analyzeReferrers flags permissive patterns', () => {
   assert.equal(results[1]?.reason, 'permissive-pattern');
   assert.equal(results[2]?.warning, false);
 });
-

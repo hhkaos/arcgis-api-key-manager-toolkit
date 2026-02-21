@@ -8,8 +8,14 @@ export function filterCredentials(
   const search = filter.search?.trim().toLowerCase();
 
   return credentials.filter((credential) => {
-    if (search && !credential.name.toLowerCase().includes(search)) {
-      return false;
+    if (search) {
+      const matchesName = credential.name.toLowerCase().includes(search);
+      const matchesReferrer = credential.referrers.some((referrer) =>
+        referrer.toLowerCase().includes(search)
+      );
+      if (!matchesName && !matchesReferrer) {
+        return false;
+      }
     }
 
     if (filter.tag && !credential.tags.includes(filter.tag)) {
@@ -49,4 +55,3 @@ export function sortCredentials(
 
   return cloned;
 }
-

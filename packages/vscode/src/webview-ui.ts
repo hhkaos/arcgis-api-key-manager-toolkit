@@ -37,7 +37,7 @@ type KeyActionModalElement = HTMLElement & {
   credentialId: string;
   credentialName: string;
   keySlot: 1 | 2;
-  action: 'create' | 'regenerate';
+  action: 'create' | 'regenerate' | 'revoke';
   existingPartialId: string;
   existingCreated: string;
   resultKey: string | null;
@@ -178,7 +178,11 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     });
 
     this.detailEl.addEventListener('key-action-request', (event: Event) => {
-      const detail = (event as CustomEvent<{ credentialId: string; slot: 1 | 2; action: 'create' | 'regenerate' }>).detail;
+      const detail = (event as CustomEvent<{
+        credentialId: string;
+        slot: 1 | 2;
+        action: 'create' | 'regenerate' | 'revoke';
+      }>).detail;
       if (!detail || !this.selectedCredential) {
         return;
       }
@@ -205,7 +209,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       const detail = (event as CustomEvent<{
         credentialId: string;
         slot: 1 | 2;
-        action: 'create' | 'regenerate';
+        action: 'create' | 'regenerate' | 'revoke';
         expirationDays?: number;
       }>).detail;
 
@@ -217,7 +221,10 @@ class ArcgisApiKeysAppElement extends HTMLElement {
           credentialId: detail.credentialId,
           slot: detail.slot,
           action: detail.action,
-          expirationDays: detail.expirationDays
+          expirationDays:
+            typeof detail.expirationDays === 'number' && detail.expirationDays > 0
+              ? detail.expirationDays
+              : undefined
         }
       });
     });
@@ -343,8 +350,18 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     if (message.type === 'host/key-action-result') {
       this.modalEl.loading = false;
       this.modalEl.errorMessage = '';
-      this.modalEl.resultKey = message.payload.result.key;
-      this.statusEl.textContent = `Key action complete for slot ${message.payload.result.slot}.`;
+      this.modalEl.resultKey = message.payload.result.key ?? null;
+      if (message.payload.result.action === 'revoke') {
+        this.modalEl.open = false;
+      }
+
+      const actionLabel =
+        message.payload.result.action === 'create'
+          ? 'Generation'
+          : message.payload.result.action === 'regenerate'
+            ? 'Regeneration'
+            : 'Revocation';
+      this.statusEl.textContent = `${actionLabel} complete for slot ${message.payload.result.slot}.`;
     }
   }
 

@@ -511,7 +511,7 @@ async function executeKeyActionForEnvironment(
   payload: {
     credentialId: string;
     slot: 1 | 2;
-    action: 'create' | 'regenerate';
+    action: 'create' | 'regenerate' | 'revoke';
     expirationDays?: number;
   }
 ): Promise<void> {
@@ -530,13 +530,20 @@ async function executeKeyActionForEnvironment(
             slot: payload.slot,
             expirationDays: payload.expirationDays
           })
-        : await services.restClient.regenerateApiKey({
-            environment,
-            accessToken: token,
-            credentialId: payload.credentialId,
-            slot: payload.slot,
-            expirationDays: payload.expirationDays
-          });
+        : payload.action === 'regenerate'
+          ? await services.restClient.regenerateApiKey({
+              environment,
+              accessToken: token,
+              credentialId: payload.credentialId,
+              slot: payload.slot,
+              expirationDays: payload.expirationDays
+            })
+          : await services.restClient.revokeApiKey({
+              environment,
+              accessToken: token,
+              credentialId: payload.credentialId,
+              slot: payload.slot
+            });
 
     services.webviewPanels.post(panel, {
       type: 'host/key-action-result',

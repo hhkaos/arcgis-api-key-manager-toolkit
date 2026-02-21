@@ -214,11 +214,11 @@ export class CredentialListElement extends LitElement {
       <section class="panel">
         <div class="toolbar">
           <label>
-            Search Name
+            Search Name or Referrer
             <input
               type="text"
               .value=${this.searchDraft}
-              placeholder="Find credential"
+              placeholder="Find credential or referrer"
               @input=${this.handleSearchInput}
               ?disabled=${this.loading}
             />

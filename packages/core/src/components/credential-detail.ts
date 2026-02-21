@@ -6,7 +6,7 @@ import './expiration-badge.js';
 export interface KeyActionRequestDetail {
   credentialId: string;
   slot: 1 | 2;
-  action: 'create' | 'regenerate';
+  action: 'create' | 'regenerate' | 'revoke';
 }
 
 export class CredentialDetailElement extends LitElement {
@@ -169,6 +169,18 @@ export class CredentialDetailElement extends LitElement {
       color: #ffffff;
     }
 
+    button.revoke {
+      border-color: #7a271a;
+      background: #7a271a;
+      color: #ffffff;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
     button:focus {
       outline: 2px solid var(--akm-focus);
       outline-offset: 1px;
@@ -292,29 +304,43 @@ export class CredentialDetailElement extends LitElement {
 
   private renderSlotCard(slot: KeySlotStatus) {
     const action = slot.exists ? 'regenerate' : 'create';
-    const buttonText = slot.exists ? `Regenerate API Key ${slot.slot}` : `Create API Key ${slot.slot}`;
+    const buttonText = slot.exists
+      ? `Regenerate API key ${slot.slot}`
+      : slot.slot === 1
+        ? 'Generate a primary API key'
+        : 'Generate a secondary API key';
 
     return html`
       <div class="slot-card">
         <div>
-          <div class="label">Key ${slot.slot}</div>
+          <div class="label">${slot.slot === 1 ? 'Primary key (slot 1)' : 'Secondary key (slot 2)'}</div>
           <div class="value">${slot.exists ? 'Exists' : 'Not created'}</div>
         </div>
         <div class="note">Partial ID: ${slot.partialId ?? 'N/A'}</div>
         <div class="note">Created: ${slot.created ? new Date(slot.created).toLocaleString() : 'N/A'}</div>
-        <button
-          type="button"
-          class=${action}
-          @click=${() => this.requestKeyAction(slot.slot, action)}
-          ?disabled=${this.loading}
-        >
-          ${buttonText}
-        </button>
+        <div class="button-row">
+          <button
+            type="button"
+            class=${action}
+            @click=${() => this.requestKeyAction(slot.slot, action)}
+            ?disabled=${this.loading}
+          >
+            ${buttonText}
+          </button>
+          <button
+            type="button"
+            class="revoke"
+            @click=${() => this.requestKeyAction(slot.slot, 'revoke')}
+            ?disabled=${this.loading || !slot.exists}
+          >
+            Revoke API key ${slot.slot}
+          </button>
+        </div>
       </div>
     `;
   }
 
-  private requestKeyAction(slot: 1 | 2, action: 'create' | 'regenerate'): void {
+  private requestKeyAction(slot: 1 | 2, action: 'create' | 'regenerate' | 'revoke'): void {
     if (!this.credential) {
       return;
     }

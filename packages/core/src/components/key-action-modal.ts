@@ -3,7 +3,7 @@ import { LitElement, css, html } from 'lit';
 export interface KeyActionExecuteDetail {
   credentialId: string;
   slot: 1 | 2;
-  action: 'create' | 'regenerate';
+  action: 'create' | 'regenerate' | 'revoke';
   expirationDays: number;
 }
 
@@ -219,6 +219,12 @@ export class KeyActionModalElement extends LitElement {
       color: #ffffff;
     }
 
+    button.primary.revoke {
+      border-color: #7a271a;
+      background: #7a271a;
+      color: #ffffff;
+    }
+
     button:disabled {
       opacity: 0.6;
       cursor: not-allowed;
@@ -231,7 +237,7 @@ export class KeyActionModalElement extends LitElement {
   public credentialId: string = '';
   public credentialName: string = '';
   public keySlot: 1 | 2 = 1;
-  public action: 'create' | 'regenerate' = 'create';
+  public action: 'create' | 'regenerate' | 'revoke' = 'create';
   public existingPartialId: string = '';
   public existingCreated: string = '';
   public resultKey: string | null = null;
@@ -244,7 +250,7 @@ export class KeyActionModalElement extends LitElement {
     if (changedProperties.has('open')) {
       if (!this.open) {
         this.purgeKeyFromState();
-      } else if (!this.expirationDateInput) {
+      } else if (!this.expirationDateInput && this.action !== 'revoke') {
         this.expirationDateInput = getDefaultExpirationDateInput();
       }
     }
@@ -261,13 +267,12 @@ export class KeyActionModalElement extends LitElement {
       return html``;
     }
 
-    const title =
-      this.action === 'regenerate'
-        ? `Regenerate API Key ${this.keySlot}`
-        : `Create API Key ${this.keySlot}`;
+    const title = this.getActionTitle();
     const primaryLabel = this.loading ? 'Running...' : title;
+    const shouldShowExpirationInput = this.action !== 'revoke';
     const minDate = getMinExpirationDateInput();
     const maxDate = getMaxExpirationDateInput();
+    const warningText = this.getActionWarning();
 
     return html`
       <div class="backdrop" @click=${this.handleClose}></div>
@@ -276,32 +281,38 @@ export class KeyActionModalElement extends LitElement {
 
         <div class="context">
           <div class="row"><div class="label">Credential</div><div class="value">${this.credentialName || 'Unknown'}</div></div>
-          <div class="row"><div class="label">Key Slot</div><div class="value">${this.keySlot}</div></div>
+          <div class="row"><div class="label">Key Slot</div><div class="value">${this.getSlotLabel()}</div></div>
           <div class="row"><div class="label">Existing Partial ID</div><div class="value">${this.existingPartialId || 'N/A'}</div></div>
           <div class="row"><div class="label">Existing Created</div><div class="value">${this.existingCreated ? new Date(this.existingCreated).toLocaleString() : 'N/A'}</div></div>
         </div>
 
-        <div class="warning">Regeneration permanently invalidates the previous key. This action cannot be undone.</div>
+        <div class="warning">${warningText}</div>
 
-        <label class="field">
-          Expiration Date (required)
-          <input
-            type="date"
-            .value=${this.expirationDateInput}
-            min=${minDate}
-            max=${maxDate}
-            required
-            @input=${this.handleExpirationDateInput}
-            ?disabled=${this.loading}
-          />
-          <span>Select between tomorrow and ${maxDate}. Default is +60 days.</span>
-        </label>
+        ${
+          shouldShowExpirationInput
+            ? html`
+                <label class="field">
+                  Expiration Date (required)
+                  <input
+                    type="date"
+                    .value=${this.expirationDateInput}
+                    min=${minDate}
+                    max=${maxDate}
+                    required
+                    @input=${this.handleExpirationDateInput}
+                    ?disabled=${this.loading}
+                  />
+                  <span>Select between tomorrow and ${maxDate}. Default is +60 days.</span>
+                </label>
+              `
+            : null
+        }
 
         ${
           this.resultKey
             ? html`
                 <div class="result">
-                  <div class="label">New Key (shown once)</div>
+                  <div class="label">${this.getResultLabel()}</div>
                   <textarea id="generated-key" readonly .value=${this.resultKey}></textarea>
                   <div class="copy-row">
                     <button type="button" @click=${this.handleCopyKey}>Copy Key</button>
@@ -340,10 +351,14 @@ export class KeyActionModalElement extends LitElement {
   }
 
   private handleExecute(): void {
-    const expirationDays = this.parseExpirationDaysFromDate();
-    if (!expirationDays) {
-      this.errorMessage = 'Expiration date is required and must be between tomorrow and 365 days.';
-      return;
+    let expirationDays = 0;
+    if (this.action !== 'revoke') {
+      const parsedExpirationDays = this.parseExpirationDaysFromDate();
+      if (!parsedExpirationDays) {
+        this.errorMessage = 'Expiration date is required and must be between tomorrow and 365 days.';
+        return;
+      }
+      expirationDays = parsedExpirationDays;
     }
 
     this.dispatchEvent(
@@ -441,6 +456,38 @@ export class KeyActionModalElement extends LitElement {
       clearTimeout(this.copyTimer);
       this.copyTimer = null;
     }
+  }
+
+  private getActionTitle(): string {
+    if (this.action === 'create') {
+      return this.keySlot === 1 ? 'Generate a primary API key' : 'Generate a secondary API key';
+    }
+
+    if (this.action === 'regenerate') {
+      return `Regenerate API key ${this.keySlot}`;
+    }
+
+    return `Revoke API key ${this.keySlot}`;
+  }
+
+  private getActionWarning(): string {
+    if (this.action === 'create') {
+      return 'Generate creates a new API key value for this slot. Save it securely because it is shown once.';
+    }
+
+    if (this.action === 'regenerate') {
+      return 'Regeneration permanently invalidates the previous key. This action cannot be undone.';
+    }
+
+    return 'Revoking permanently invalidates this key slot until a new key is generated.';
+  }
+
+  private getResultLabel(): string {
+    return this.action === 'create' ? 'Generated Key (shown once)' : 'Regenerated Key (shown once)';
+  }
+
+  private getSlotLabel(): string {
+    return this.keySlot === 1 ? 'Primary (1)' : 'Secondary (2)';
   }
 }
 

@@ -20,7 +20,7 @@ Provide a secure developer tool that allows an authenticated ArcGIS user to:
 - List their own API Key Credentials
 - Explore metadata (name, tags, expiration, privileges, referrer restrictions)
 - See whether API Key 1 and/or API Key 2 exist
-- Create or regenerate API Key 1 or API Key 2
+- Create, regenerate, or revoke API Key 1 or API Key 2
 - Copy newly generated keys (shown once only)
 
 Scope is strictly limited to **the authenticated user's own credentials**.
@@ -77,7 +77,7 @@ packages/
 
 ### Shared Core (`packages/core`)
 
-- ArcGIS REST client layer (using `@esri/arcgis-rest-js`)
+- ArcGIS REST client layer (direct ArcGIS REST API calls via a transport abstraction; `@esri/arcgis-rest-js` is installed but no longer used for key mutation flows)
 - Data model and types
 - Business logic (filtering, sorting, expiration categorization)
 - Environment/connection management

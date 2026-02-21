@@ -33,8 +33,11 @@ export interface KeyMutationOptions {
   expirationDays?: number;
 }
 
+export type KeyMutationAction = 'create' | 'regenerate' | 'revoke';
+
 export interface KeyMutationResult {
-  key: string;
+  action: KeyMutationAction;
+  key?: string;
   slot: 1 | 2;
   credentialId: string;
 }
@@ -52,6 +55,7 @@ export interface ArcGisRestClient {
   fetchCredentialDetail(options: FetchCredentialDetailOptions): Promise<ApiKeyCredential>;
   createApiKey(options: KeyMutationOptions): Promise<KeyMutationResult>;
   regenerateApiKey(options: KeyMutationOptions): Promise<KeyMutationResult>;
+  revokeApiKey(options: KeyMutationOptions): Promise<KeyMutationResult>;
   detectCapabilities(environment: EnvironmentConfig, accessToken: string): Promise<ArcGisClientCapabilities>;
   getLastResponseValidationWarnings(): string[];
 }

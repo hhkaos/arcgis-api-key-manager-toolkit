@@ -414,6 +414,183 @@ test('fetchCredentials maps ArcGIS errors to readable rest errors', async () => 
   );
 });
 
+test('createApiKey for online uses update + oauth2 token flow for the requested slot', async () => {
+  const transport = new MockTransport([
+    { owner: 'hhkaos2' },
+    { client_id: 'app-client', client_secret: 'app-secret' },
+    { success: true },
+    { access_token: 'generated-key' }
+  ]);
+
+  const client = new ArcGisRestClientImpl(transport);
+  const result = await client.createApiKey({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id',
+    slot: 1,
+    expirationDays: 30
+  });
+
+  assert.equal(result.action, 'create');
+  assert.equal(result.slot, 1);
+  assert.equal(result.credentialId, 'item-id');
+  assert.equal(result.key, 'generated-key');
+
+  assert.equal(transport.calls[0]?.path, '/content/items/item-id');
+  assert.equal(transport.calls[1]?.path, '/content/users/hhkaos2/items/item-id/registeredAppInfo');
+  assert.equal(transport.calls[2]?.path, '/content/users/hhkaos2/items/item-id/update');
+  assert.equal(transport.calls[3]?.path, '/oauth2/token');
+
+  assert.equal(typeof transport.calls[2]?.body?.apiToken1ExpirationDate, 'number');
+  assert.equal(transport.calls[2]?.body?.apiToken2ExpirationDate, undefined);
+  assert.equal(transport.calls[3]?.body?.apiToken, 1);
+  assert.equal(transport.calls[3]?.body?.regenerateApiToken, false);
+  assert.equal(transport.calls[3]?.body?.client_id, 'app-client');
+  assert.equal(transport.calls[3]?.body?.client_secret, 'app-secret');
+});
+
+test('regenerateApiKey for online sets slot-specific expiration and uses regenerate flag', async () => {
+  const transport = new MockTransport([
+    { owner: 'hhkaos2' },
+    { client_id: 'app-client', client_secret: 'app-secret' },
+    { success: true },
+    { access_token: 'regenerated-key' }
+  ]);
+
+  const client = new ArcGisRestClientImpl(transport);
+  const result = await client.regenerateApiKey({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id',
+    slot: 2,
+    expirationDays: 45
+  });
+
+  assert.equal(result.action, 'regenerate');
+  assert.equal(result.slot, 2);
+  assert.equal(result.key, 'regenerated-key');
+
+  assert.equal(transport.calls[2]?.path, '/content/users/hhkaos2/items/item-id/update');
+  assert.equal(transport.calls[3]?.path, '/oauth2/token');
+  assert.equal(transport.calls[2]?.body?.apiToken1ExpirationDate, undefined);
+  assert.equal(typeof transport.calls[2]?.body?.apiToken2ExpirationDate, 'number');
+  assert.equal(transport.calls[3]?.body?.apiToken, 2);
+  assert.equal(transport.calls[3]?.body?.regenerateApiToken, true);
+});
+
+test('revokeApiKey for online uses oauth2 revokeToken and does not request a key value', async () => {
+  const transport = new MockTransport([
+    { owner: 'hhkaos2' },
+    { client_id: 'app-client', client_secret: 'app-secret' },
+    { success: true }
+  ]);
+
+  const client = new ArcGisRestClientImpl(transport);
+  const result = await client.revokeApiKey({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id',
+    slot: 2
+  });
+
+  assert.equal(result.action, 'revoke');
+  assert.equal(result.slot, 2);
+  assert.equal(result.key, undefined);
+
+  assert.equal(transport.calls[0]?.path, '/content/items/item-id');
+  assert.equal(transport.calls[1]?.path, '/content/users/hhkaos2/items/item-id/registeredAppInfo');
+  assert.equal(transport.calls.length, 3);
+  assert.equal(transport.calls[2]?.path, '/oauth2/revokeToken');
+  assert.equal(transport.calls[2]?.body?.apiToken, 2);
+  assert.equal(transport.calls[2]?.body?.client_id, 'app-client');
+  assert.equal(transport.calls[2]?.body?.client_secret, 'app-secret');
+});
+
+test('createApiKey requires expiration days and fails before update/token calls', async () => {
+  const transport = new MockTransport([
+    { owner: 'hhkaos2' },
+    { client_id: 'app-client', client_secret: 'app-secret' }
+  ]);
+
+  const client = new ArcGisRestClientImpl(transport);
+  await assert.rejects(
+    () =>
+      client.createApiKey({
+        environment: onlineEnvironment,
+        accessToken: 'token',
+        credentialId: 'item-id',
+        slot: 1
+      }),
+    (error: unknown) => {
+      assert.equal(typeof error, 'object');
+      assert.equal((error as { code?: string }).code, 'INVALID_REQUEST');
+      assert.equal(
+        (error as { message?: string }).message,
+        'Expiration date is required to generate or regenerate an API key.'
+      );
+      return true;
+    }
+  );
+
+  assert.equal(transport.calls.length, 2);
+  assert.equal(transport.calls[0]?.path, '/content/items/item-id');
+  assert.equal(transport.calls[1]?.path, '/content/users/hhkaos2/items/item-id/registeredAppInfo');
+});
+
+test('online key mutation does not fall back to /portals/self key mutation endpoints', async () => {
+  const transport = new MockTransport([
+    { owner: 'hhkaos2' },
+    { client_id: 'app-client' }
+  ]);
+
+  const client = new ArcGisRestClientImpl(transport);
+  await assert.rejects(
+    () =>
+      client.regenerateApiKey({
+        environment: onlineEnvironment,
+        accessToken: 'token',
+        credentialId: 'item-id',
+        slot: 1,
+        expirationDays: 30
+      }),
+    (error: unknown) => {
+      assert.equal(typeof error, 'object');
+      assert.equal((error as { message?: string }).message, 'ArcGIS registered app info did not include client credentials.');
+      return true;
+    }
+  );
+
+  assert.equal(transport.calls.length, 2);
+  assert.equal(transport.calls[0]?.path, '/content/items/item-id');
+  assert.equal(transport.calls[1]?.path, '/content/users/hhkaos2/items/item-id/registeredAppInfo');
+});
+
+test('enterprise key mutation uses documented token flow endpoints', async () => {
+  const transport = new MockTransport([
+    { owner: 'ent-user' },
+    { client_id: 'ent-client', client_secret: 'ent-secret' },
+    { success: true },
+    { access_token: 'enterprise-key' }
+  ]);
+
+  const client = new ArcGisRestClientImpl(transport);
+  const result = await client.regenerateApiKey({
+    environment: enterpriseEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id',
+    slot: 1,
+    expirationDays: 30
+  });
+
+  assert.equal(result.action, 'regenerate');
+  assert.equal(result.key, 'enterprise-key');
+  assert.equal(transport.calls.length, 4);
+  assert.equal(transport.calls[0]?.path, '/content/items/item-id');
+  assert.equal(transport.calls[1]?.path, '/content/users/ent-user/items/item-id/registeredAppInfo');
+  assert.equal(transport.calls[2]?.path, '/content/users/ent-user/items/item-id/update');
+  assert.equal(transport.calls[3]?.path, '/oauth2/token');
+});
+
 test('detectCapabilities gracefully degrades for unsupported enterprise version', async () => {
   const transport = new MockTransport([{ currentVersion: 11.1 }]);
   const client = new ArcGisRestClientImpl(transport);

@@ -19,7 +19,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Chrome OAuth local-development setup docs for unpacked extensions and `chromiumapp.org` redirect URL configuration.
 - Chrome popup state unit tests for auth control visibility, enterprise field visibility, and post-sign-in explorer auto-open decision logic.
 
+### Added
+
+- **Core:** Added `revokeApiKey()` method to `ArcGisRestClient` interface and implementation, using the `/oauth2/revokeToken` endpoint.
+- **Core:** Exposed `KeyMutationAction` type (`'create' | 'regenerate' | 'revoke'`) from `rest/types`.
+- **Core:** "Revoke API key N" button added to each key slot card in `<credential-detail>`; modal closes automatically after a successful revoke.
+- **Core:** `filterCredentials()` now also matches against referrer domains (case-insensitive) in addition to credential name.
+- **Core:** New unit tests for create/regenerate/revoke REST flows, expiration validation, and enterprise endpoint targeting.
+- **Core:** New protocol unit test confirming revoke action round-trips through serialization correctly.
+
+- **VS Code:** `executeKeyActionForEnvironment` now handles the `revoke` action and dispatches to `revokeApiKey`.
+
+- **Chrome:** Explorer and service worker now handle the `revoke` action and dispatch to `revokeApiKey`.
+
 ### Changed
+
+- **Core:** Key mutation flow replaced: removed dynamic `@esri/arcgis-rest-js` import fallback; all create/regenerate/revoke now use a documented flow — item owner lookup → `/registeredAppInfo` → `/items/{id}/update` (expiration) → `/oauth2/token` or `/oauth2/revokeToken`.
+- **Core:** `KeyMutationResult` now includes an `action` field and `key` is optional (absent for revoke).
+- **Core:** `<key-action-modal>` title, warning text, and expiration input are now action-aware (no expiration field shown for revoke).
+- **Core:** Key slot labels updated to "Primary key (slot 1)" / "Secondary key (slot 2)" and button labels updated to "Generate a primary/secondary API key" for create actions.
+- **Core:** Credential list search label updated to "Search Name or Referrer" with matching placeholder text.
+- **Core:** `CredentialKeyActionRequest` in messaging protocol uses `KeyMutationAction` union type rather than an inline literal.
 
 - Refreshed explorer UI to a compact, square-corner, Material-inspired visual style across shared components and VS Code webview shell.
 - Updated webview and component theming to use VS Code theme tokens (`--vscode-*`) with cross-host fallbacks so UI automatically matches active VS Code theme/profile.
@@ -34,7 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - ArcGIS Online/Location Platform credential loading now includes both new API token-backed credentials and legacy API keys by querying both search filters and merging results.
 - Credential detail/list metadata mapping now hydrates from item + registered app info endpoints so expiration dates, privileges, tags, and key slot existence render correctly in the list/detail UI.
 - Online credential loading now falls back from `/community/self` to `/portals/self` to resolve username robustly when building owner-scoped search filters.
-- Key create/regenerate flow now uses ArcGIS REST JS-style `updateApiKey` slot generation logic for Online/Location Platform, with compatibility fallback to direct portal endpoints.
+- **Core:** Key creation no longer silently swallows expiration validation errors; missing expiration now surfaces as an `INVALID_REQUEST` error before any REST calls are made.
 
 ---
 
