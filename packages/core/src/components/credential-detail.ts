@@ -111,8 +111,7 @@ export class CredentialDetailElement extends LitElement {
     }
 
     .referrer.warn {
-      border-color: #f4c57a;
-      background: #fff8e6;
+      border-color: var(--vscode-editorWarning-foreground, #8a4b00);
     }
 
     .note {
@@ -121,7 +120,7 @@ export class CredentialDetailElement extends LitElement {
     }
 
     .warning {
-      color: #8a4b00;
+      color: var(--vscode-editorWarning-foreground, #8a4b00);
       font-size: 12px;
       font-weight: 600;
       text-transform: uppercase;
@@ -135,12 +134,12 @@ export class CredentialDetailElement extends LitElement {
     }
 
     .slot-card {
-      border: 1px solid #d9e1e8;
+      border: 1px solid var(--akm-border);
       border-radius: 0;
       padding: 8px;
       display: grid;
       gap: 6px;
-      background: #ffffff;
+      background: var(--akm-surface-raised);
     }
 
     button {
@@ -157,22 +156,11 @@ export class CredentialDetailElement extends LitElement {
       font-size: 12px;
     }
 
-    button.create {
-      border-color: #2b8a3e;
-      background: #2b8a3e;
-      color: #ffffff;
-    }
-
-    button.regenerate {
-      border-color: #b42318;
-      background: #b42318;
-      color: #ffffff;
-    }
-
+    button.regenerate,
     button.revoke {
-      border-color: #7a271a;
-      background: #7a271a;
-      color: #ffffff;
+      border-color: var(--vscode-errorForeground, #b42318);
+      background: var(--akm-surface-raised);
+      color: var(--vscode-errorForeground, #b42318);
     }
 
     .button-row {
@@ -282,7 +270,7 @@ export class CredentialDetailElement extends LitElement {
                         <div class="value">${annotation.value}</div>
                         <div class="note">${this.getReferrerReason(annotation.reason)}</div>
                       </div>
-                      ${annotation.warning ? html`<span class="warning">Review</span>` : null}
+                      ${annotation.warning ? html`<span class="warning">⚠ Review</span>` : null}
                     </div>
                   `
                 )
@@ -307,10 +295,10 @@ export class CredentialDetailElement extends LitElement {
   private renderSlotCard(slot: KeySlotStatus) {
     const action = slot.exists ? 'regenerate' : 'create';
     const buttonText = slot.exists
-      ? `Regenerate API key ${slot.slot}`
+      ? `↺ Regenerate API key ${slot.slot}`
       : slot.slot === 1
-        ? 'Generate a primary API key'
-        : 'Generate a secondary API key';
+        ? '+ Generate a primary API key'
+        : '+ Generate a secondary API key';
 
     return html`
       <div class="slot-card">
@@ -341,7 +329,7 @@ export class CredentialDetailElement extends LitElement {
             @click=${() => this.requestKeyAction(slot.slot, 'revoke')}
             ?disabled=${this.loading || !slot.exists}
           >
-            Revoke API key ${slot.slot}
+            ✕ Revoke API key ${slot.slot}
           </button>
         </div>
       </div>

@@ -24,33 +24,28 @@ export class ExpirationBadgeElement extends LitElement {
       padding: 2px 7px;
       font-size: 11px;
       font-weight: 600;
-      border: 1px solid transparent;
+      border: 1px solid var(--vscode-panel-border, #d0d7de);
+      background: var(--vscode-editor-background, #ffffff);
       line-height: 1.2;
       letter-spacing: 0.01em;
     }
 
     .ok {
-      color: #146c2e;
-      background: #e8f5e9;
-      border-color: #9ad3a6;
+      color: var(--vscode-editor-foreground, #18202a);
     }
 
     .warning {
-      color: #8a4b00;
-      background: #fff6e5;
-      border-color: #f4c57a;
+      color: var(--vscode-editorWarning-foreground, #8a4b00);
+      border-color: var(--vscode-editorWarning-foreground, #8a4b00);
     }
 
     .critical {
-      color: #a40e26;
-      background: #fde7ea;
-      border-color: #f2a4b1;
+      color: var(--vscode-errorForeground, #b42318);
+      border-color: var(--vscode-errorForeground, #b42318);
     }
 
     .expired {
       color: var(--vscode-descriptionForeground, #57606a);
-      background: var(--vscode-editor-background, #f6f8fa);
-      border-color: var(--vscode-panel-border, #d0d7de);
       text-decoration: line-through;
     }
   `;
@@ -62,7 +57,7 @@ export class ExpirationBadgeElement extends LitElement {
   public override render() {
     if (this.nonExpiring) {
       const prefix = this.keyLabel ? `${this.keyLabel} · ` : '';
-      return html`<span class="badge ok">${prefix}Doesn't expire</span>`;
+      return html`<span class="badge ok">${prefix}✓ Doesn't expire</span>`;
     }
 
     const category = this.getCategory();
@@ -84,18 +79,18 @@ export class ExpirationBadgeElement extends LitElement {
     const prefix = this.keyLabel ? `${this.keyLabel} · ` : '';
 
     if (category === 'ok') {
-      return `${prefix}Healthy · ${dateLabel}`;
+      return `${prefix}✓ Healthy · ${dateLabel}`;
     }
 
     if (category === 'warning') {
-      return `${prefix}Expiring Soon · ${dateLabel}`;
+      return `${prefix}⚠ Expiring Soon · ${dateLabel}`;
     }
 
     if (category === 'critical') {
-      return `${prefix}Critical · ${dateLabel}`;
+      return `${prefix}⚠ Critical · ${dateLabel}`;
     }
 
-    return `${prefix}Expired · ${dateLabel}`;
+    return `${prefix}✕ Expired · ${dateLabel}`;
   }
 }
 

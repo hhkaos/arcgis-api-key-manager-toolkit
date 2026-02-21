@@ -19,8 +19,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Chrome OAuth local-development setup docs for unpacked extensions and `chromiumapp.org` redirect URL configuration.
 - Chrome popup state unit tests for auth control visibility, enterprise field visibility, and post-sign-in explorer auto-open decision logic.
 
-### Added
-
 - **Core:** Added `revokeApiKey()` method to `ArcGisRestClient` interface and implementation, using the `/oauth2/revokeToken` endpoint.
 - **Core:** Exposed `KeyMutationAction` type (`'create' | 'regenerate' | 'revoke'`) from `rest/types`.
 - **Core:** "Revoke API key N" button added to each key slot card in `<credential-detail>`; modal closes automatically after a successful revoke.
@@ -44,6 +42,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Core:** Expiration badge states (ok/warning/critical/expired) now use VS Code theme tokens (`--vscode-editor-foreground`, `--vscode-editorWarning-foreground`, `--vscode-errorForeground`) instead of hardcoded colors; badges use a neutral theme-background surface; emoji prefixes (✓ / ⚠ / ✕) convey status without relying on background color.
+- **Core:** Credential detail slot cards use `--akm-surface-raised` / `--akm-border` instead of hardcoded `#ffffff` / `#d9e1e8`; warning referrer border uses `--vscode-editorWarning-foreground`; "Review" label uses theme warning color; action button labels prefixed with `↺` / `✕` / `+` symbols; regenerate/revoke buttons styled with `--vscode-errorForeground` on a theme-background surface instead of hardcoded dark reds.
 - **Core:** Key mutation flow replaced: removed dynamic `@esri/arcgis-rest-js` import fallback; all create/regenerate/revoke now use a documented flow — item owner lookup → `/registeredAppInfo` → `/items/{id}/update` (expiration) → `/oauth2/token` or `/oauth2/revokeToken`.
 - **Core:** `KeyMutationResult` now includes an `action` field and `key` is optional (absent for revoke).
 - **Core:** `<key-action-modal>` title, warning text, and expiration input are now action-aware (no expiration field shown for revoke).
@@ -54,6 +54,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Core:** `<credential-detail>` now shows expiration per key slot card; top-level expiration row hidden for new-style credentials (non-legacy).
 - **Core:** `<expiration-badge>` fixes grammar: "Doesn't expires" → "Doesn't expire".
 
+- **VS Code:** Webview panel title changed from "ArcGIS API Keys - {env}" to "{env} API keys".
+- **VS Code:** Session expiry (`SESSION_EXPIRED`) now silently transitions to the logged-out state — hides the credential list, shows the sign-in button, and removes the redundant error banner.
+- **VS Code:** Credential list visibility fixed: uses `style.display` instead of the `hidden` attribute so it reliably hides inside custom elements regardless of shadow DOM CSS.
+- **VS Code:** Error messages no longer include the raw error code suffix.
 - **VS Code:** `webview-ui.ts` passes `portalBase` to `<credential-list>` element.
 
 - **Chrome:** `copyLastKeyButton` removed from explorer page (copy functionality is handled within `<key-action-modal>`).

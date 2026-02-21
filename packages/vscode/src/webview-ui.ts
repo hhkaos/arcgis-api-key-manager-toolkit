@@ -84,7 +84,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
 
     const title = document.createElement('h2');
     title.textContent = this.dataset.environmentName
-      ? `ArcGIS API Keys - ${this.dataset.environmentName}`
+      ? `${this.dataset.environmentName} API keys`
       : 'ArcGIS API Keys';
     title.style.margin = '0';
     title.style.fontSize = '18px';
@@ -282,6 +282,13 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     }
 
     if (message.type === 'host/error') {
+      if (message.payload.code === 'SESSION_EXPIRED') {
+        this.authState = 'logged-out';
+        this.clearCredentialState();
+        this.syncUiState();
+        return;
+      }
+
       if (this.authState === 'logging-in' || this.authState === 'checking') {
         this.authState = 'logged-out';
       }
@@ -290,9 +297,8 @@ class ArcgisApiKeysAppElement extends HTMLElement {
         this.authState = 'logged-in';
       }
 
-      const suffix = message.payload.code ? ` (${message.payload.code})` : '';
       this.errorEl.hidden = false;
-      this.errorEl.textContent = `${message.payload.message}${suffix}`;
+      this.errorEl.textContent = message.payload.message;
       this.statusEl.textContent = this.authState === 'logged-in' ? 'Signed in.' : 'Not signed in.';
       this.credentialsEl.loading = false;
       this.detailEl.loading = false;
@@ -381,8 +387,6 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.refreshButton.disabled = isBusy;
     this.backButton.disabled = isBusy;
 
-    this.credentialsEl.hidden = this.authState !== 'logged-in' || this.detailMode;
-    this.detailEl.hidden = this.authState !== 'logged-in' || !this.detailMode;
     this.syncMasterDetailVisibility();
 
     if (this.authState === 'checking') {
@@ -460,7 +464,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   private syncMasterDetailVisibility(): void {
     const isLoggedIn = this.authState === 'logged-in';
     const showDetail = isLoggedIn && this.detailMode;
-    this.credentialsEl.style.display = showDetail ? 'none' : '';
+    this.credentialsEl.style.display = !isLoggedIn || showDetail ? 'none' : '';
     this.detailEl.style.display = showDetail ? '' : 'none';
   }
 }

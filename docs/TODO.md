@@ -148,7 +148,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 - [x] Register URI handler for callback
 - [x] Exchange auth code for access token
 - [x] Store token in SecretStorage keyed by environment ID
-- [ ] Handle token expiry: block + re-auth + require user restart (deferred until after Chrome baseline)
+- [x] Handle token expiry: SESSION_EXPIRED silently transitions to logged-out state in the webview (credential list hidden, sign-in button shown)
 
 ### 2.6 Commands
 
