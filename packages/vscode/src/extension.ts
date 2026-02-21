@@ -466,6 +466,18 @@ async function loadCredentialsForEnvironment(
     fetchWarnings: () => services.restClient.getLastResponseValidationWarnings()
   });
 
+  if (message.type === 'host/credentials' && token) {
+    try {
+      const portalBase = await services.restClient.fetchPortalBase({
+        environment,
+        accessToken: token.accessToken
+      });
+      (message.payload as Record<string, unknown>).portalBase = portalBase;
+    } catch {
+      // Non-critical; links simply won't appear without a portalBase.
+    }
+  }
+
   services.webviewPanels.post(panel, message);
 }
 

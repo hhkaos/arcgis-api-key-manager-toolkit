@@ -239,15 +239,17 @@ export class CredentialDetailElement extends LitElement {
               <div class="label">Created</div>
               <div class="value">${new Date(this.credential.created).toLocaleString()}</div>
             </div>
-            <div>
-              <div class="label">Expiration</div>
-              <div class="value">
-                <expiration-badge
-                  .expiration=${this.credential.expiration}
-                  .nonExpiring=${Boolean(this.credential.nonExpiring)}
-                ></expiration-badge>
-              </div>
-            </div>
+            ${this.credential.isLegacy
+              ? html`<div>
+                  <div class="label">Expiration</div>
+                  <div class="value">
+                    <expiration-badge
+                      .expiration=${this.credential.expiration}
+                      .nonExpiring=${true}
+                    ></expiration-badge>
+                  </div>
+                </div>`
+              : null}
             <div>
               <div class="label">Tags</div>
               <div class="value">${this.credential.tags.join(', ') || 'No tags'}</div>
@@ -318,6 +320,12 @@ export class CredentialDetailElement extends LitElement {
         </div>
         <div class="note">Partial ID: ${slot.partialId ?? 'N/A'}</div>
         <div class="note">Created: ${slot.created ? new Date(slot.created).toLocaleString() : 'N/A'}</div>
+        <div class="note">
+          Expires:
+          ${slot.exists && slot.expiration
+            ? html`<expiration-badge .expiration=${slot.expiration}></expiration-badge>`
+            : html`<span>N/A</span>`}
+        </div>
         <div class="button-row">
           <button
             type="button"

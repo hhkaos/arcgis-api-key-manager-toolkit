@@ -5,7 +5,8 @@ import type { ExpirationCategory } from '../types/models.js';
 export class ExpirationBadgeElement extends LitElement {
   public static override properties = {
     expiration: { type: String },
-    nonExpiring: { type: Boolean, attribute: 'non-expiring' }
+    nonExpiring: { type: Boolean, attribute: 'non-expiring' },
+    keyLabel: { type: String, attribute: 'key-label' }
   };
 
   public static override styles = css`
@@ -56,10 +57,12 @@ export class ExpirationBadgeElement extends LitElement {
 
   public expiration: string = '';
   public nonExpiring: boolean = false;
+  public keyLabel: string = '';
 
   public override render() {
     if (this.nonExpiring) {
-      return html`<span class="badge ok">Doesn't expires</span>`;
+      const prefix = this.keyLabel ? `${this.keyLabel} · ` : '';
+      return html`<span class="badge ok">${prefix}Doesn't expire</span>`;
     }
 
     const category = this.getCategory();
@@ -78,20 +81,21 @@ export class ExpirationBadgeElement extends LitElement {
 
   private getLabel(category: ExpirationCategory): string {
     const dateLabel = this.expiration ? new Date(this.expiration).toLocaleDateString() : 'Unknown';
+    const prefix = this.keyLabel ? `${this.keyLabel} · ` : '';
 
     if (category === 'ok') {
-      return `Healthy · ${dateLabel}`;
+      return `${prefix}Healthy · ${dateLabel}`;
     }
 
     if (category === 'warning') {
-      return `Expiring Soon · ${dateLabel}`;
+      return `${prefix}Expiring Soon · ${dateLabel}`;
     }
 
     if (category === 'critical') {
-      return `Critical · ${dateLabel}`;
+      return `${prefix}Critical · ${dateLabel}`;
     }
 
-    return `Expired · ${dateLabel}`;
+    return `${prefix}Expired · ${dateLabel}`;
   }
 }
 

@@ -21,6 +21,7 @@ export class CredentialListElement extends LitElement {
     selectedCredentialId: { type: String, attribute: 'selected-credential-id' },
     loading: { type: Boolean },
     errorMessage: { type: String, attribute: 'error-message' },
+    portalBase: { type: String, attribute: 'portal-base' },
     searchText: { state: true },
     searchDraft: { state: true },
     filterTag: { state: true },
@@ -120,10 +121,28 @@ export class CredentialListElement extends LitElement {
       background: var(--akm-surface-raised);
     }
 
+    .header-row {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: minmax(160px, 2fr) minmax(180px, 2fr) 100px 28px;
+      align-items: center;
+      padding: 5px 10px;
+      background: var(--akm-surface);
+      border-bottom: 1px solid var(--akm-border);
+    }
+
+    .col-heading {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--akm-muted);
+    }
+
     .row {
       display: grid;
       gap: 8px;
-      grid-template-columns: minmax(160px, 1fr) 120px 170px 160px;
+      grid-template-columns: minmax(160px, 2fr) minmax(180px, 2fr) 100px 28px;
       align-items: center;
       padding: 8px 10px;
       border-top: 1px solid var(--akm-border);
@@ -136,10 +155,6 @@ export class CredentialListElement extends LitElement {
       border-radius: 0;
       font-family: var(--akm-font);
       color: var(--akm-text);
-    }
-
-    .row:first-child {
-      border-top: none;
     }
 
     .row:hover {
@@ -182,12 +197,50 @@ export class CredentialListElement extends LitElement {
       color: var(--akm-muted);
       font-size: 13px;
     }
+
+    .expiration-slots {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: flex-start;
+    }
+
+    .key-slot-missing {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--akm-border);
+      background: var(--akm-surface);
+      color: var(--akm-muted);
+      border-radius: 0;
+      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: 0.01em;
+    }
+
+    .settings-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--akm-muted);
+      text-decoration: none;
+      font-size: 13px;
+      padding: 2px;
+      border-radius: 2px;
+    }
+
+    .settings-link:hover {
+      color: var(--akm-primary);
+    }
   `;
 
   public credentials: ApiKeyCredential[] = [];
   public selectedCredentialId: string | null = null;
   public loading: boolean = false;
   public errorMessage: string = '';
+  public portalBase: string = '';
 
   private searchText: string = '';
   private searchDraft: string = '';
@@ -274,36 +327,57 @@ export class CredentialListElement extends LitElement {
           ${
             filteredCredentials.length === 0
               ? html`<div class="empty">No credentials match the current filters.</div>`
-              : filteredCredentials.map(
-                  (credential) => html`
-                    <button
-                      type="button"
-                      class="row ${this.selectedCredentialId === credential.id ? 'selected' : ''}"
-                      @click=${() => this.handleSelectCredential(credential.id)}
-                    >
-                      <div>
-                        <div class="name">${credential.name}</div>
-                        <div class="subtle">${credential.tags.join(', ') || 'No tags'}</div>
-                      </div>
-                      <div>
-                        <expiration-badge
-                          .expiration=${credential.expiration}
-                          .nonExpiring=${Boolean(credential.nonExpiring)}
-                        ></expiration-badge>
-                      </div>
-                      <div class="subtle">${credential.privileges.length} privileges</div>
-                      <div class="subtle">
-                        ${
-                          credential.isLegacy
-                            ? html`<span class="chip">Legacy API key</span>`
-                            : html`Key1: ${credential.key1.exists ? 'set' : 'missing'} · Key2: ${
-                                credential.key2.exists ? 'set' : 'missing'
-                              }`
-                        }
-                      </div>
-                    </button>
-                  `
-                )
+              : html`
+                  <div class="header-row">
+                    <span class="col-heading">Credential</span>
+                    <span class="col-heading">Keys</span>
+                    <span class="col-heading">Details</span>
+                    <span></span>
+                  </div>
+                  ${filteredCredentials.map(
+                    (credential) => html`
+                      <button
+                        type="button"
+                        class="row ${this.selectedCredentialId === credential.id ? 'selected' : ''}"
+                        @click=${() => this.handleSelectCredential(credential.id)}
+                      >
+                        <div>
+                          <div class="name">${credential.name}</div>
+                          <div class="subtle">${credential.tags.join(', ') || 'No tags'}</div>
+                        </div>
+                        <div class="expiration-slots">
+                          ${
+                            credential.isLegacy
+                              ? html`<expiration-badge .expiration=${credential.expiration} .nonExpiring=${true}></expiration-badge>`
+                              : html`
+                                  ${credential.key1.exists && credential.key1.expiration
+                                    ? html`<expiration-badge .expiration=${credential.key1.expiration} key-label="K1"></expiration-badge>`
+                                    : html`<span class="key-slot-missing">K1 not set</span>`}
+                                  ${credential.key2.exists && credential.key2.expiration
+                                    ? html`<expiration-badge .expiration=${credential.key2.expiration} key-label="K2"></expiration-badge>`
+                                    : html`<span class="key-slot-missing">K2 not set</span>`}
+                                `
+                          }
+                        </div>
+                        <div>
+                          <div class="subtle">${credential.privileges.length} privileges</div>
+                          <div class="subtle">${credential.referrers.length} referrers</div>
+                        </div>
+                        <div>
+                          ${this.portalBase
+                            ? html`<a
+                                class="settings-link"
+                                href="${this.portalBase}/home/item.html?id=${credential.id}#settings"
+                                target="_blank"
+                                title="Open item settings"
+                                @click=${(e: Event) => e.stopPropagation()}
+                              >↗</a>`
+                            : null}
+                        </div>
+                      </button>
+                    `
+                  )}
+                `
           }
         </div>
       </section>

@@ -19,6 +19,7 @@ export interface KeySlotStatus {
   exists: boolean;
   partialId?: string;
   created?: string;
+  expiration?: string;
 }
 
 export interface ApiKeyCredential {

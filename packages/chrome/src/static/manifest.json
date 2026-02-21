@@ -6,12 +6,24 @@
   "permissions": ["identity", "storage"],
   "host_permissions": ["https://*.arcgis.com/*"],
   "optional_host_permissions": ["https://*/*"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "background": {
     "service_worker": "service-worker.js",
     "type": "module"
   },
   "action": {
     "default_title": "ArcGIS API Key Explorer",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   }
 }

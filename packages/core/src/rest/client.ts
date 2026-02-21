@@ -51,6 +51,7 @@ interface CommunitySelfResponse {
 }
 
 interface PortalSelfResponse {
+  id?: string;
   user?: {
     username?: string;
   };
@@ -200,6 +201,33 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
     } catch (error) {
       throw mapRestError(error);
     }
+  }
+
+  public async fetchPortalBase(options: { environment: EnvironmentConfig; accessToken: string }): Promise<string> {
+    const { environment, accessToken } = options;
+
+    if (environment.type === 'enterprise') {
+      return environment.portalUrl?.replace(/\/$/, '') ?? '';
+    }
+
+    try {
+      const portal = await this.transport.request<PortalSelfResponse>({
+        path: '/portals/self',
+        method: 'GET',
+        environment,
+        accessToken,
+        query: { f: 'json' }
+      });
+
+      const orgId = readLooseString(portal.id);
+      if (orgId) {
+        return `https://${orgId}.arcgis.com`;
+      }
+    } catch {
+      // Fall through to default.
+    }
+
+    return 'https://www.arcgis.com';
   }
 
   public async createApiKey(options: KeyMutationOptions): Promise<KeyMutationResult> {
@@ -810,6 +838,10 @@ function toCredential(record: unknown): ApiKeyCredential | null {
       created: toOptionalIsoDate(
         readDateLike(readNested(source, ['key1', 'created'])) ??
           readDateLike(readNested(source, ['apiToken1CreatedDate']))
+      ),
+      expiration: toOptionalIsoDate(
+        readDateLike(readNested(source, ['key1', 'expiration'])) ??
+          readDateLike(readNested(source, ['apiToken1ExpirationDate']))
       )
     },
     key2: {
@@ -827,6 +859,10 @@ function toCredential(record: unknown): ApiKeyCredential | null {
       created: toOptionalIsoDate(
         readDateLike(readNested(source, ['key2', 'created'])) ??
           readDateLike(readNested(source, ['apiToken2CreatedDate']))
+      ),
+      expiration: toOptionalIsoDate(
+        readDateLike(readNested(source, ['key2', 'expiration'])) ??
+          readDateLike(readNested(source, ['apiToken2ExpirationDate']))
       )
     },
     isLegacy,

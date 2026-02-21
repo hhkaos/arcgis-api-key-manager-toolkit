@@ -142,10 +142,12 @@ Each **API Key Credential** exposes:
   - exists (boolean)
   - partial identifier (if available)
   - creation date (if available)
+  - expiration date (if available)
 - API Key 2 status:
   - exists (boolean)
   - partial identifier (if available)
   - creation date (if available)
+  - expiration date (if available)
 
 **Important:** Existing API key values are not retrievable. Keys are only visible immediately after creation/regeneration.
 
@@ -178,17 +180,16 @@ Display searchable list of user-owned API Key Credentials for the active environ
 
 Each item shows:
 
-- Name
-- Tags
-- Expiration date with **color-coded badge**:
+- Name and tags
+- Per-slot expiration badges (K1, K2) with **color-coded indicators**:
   - Green: >30 days remaining
   - Yellow: 7–30 days remaining
   - Red: <7 days remaining
   - Gray/strikethrough: expired
   - (Thresholds are hardcoded in v1)
-- Enabled privileges (visual indicators)
-- API Key 1 status
-- API Key 2 status
+  - Legacy API keys show a single non-expiring badge
+- Privilege and referrer counts
+- Settings link (↗) opening the ArcGIS item settings page in a new tab (when `portalBase` is available)
 
 #### Data Loading
 

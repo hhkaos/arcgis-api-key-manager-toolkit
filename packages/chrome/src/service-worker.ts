@@ -170,7 +170,7 @@ async function handleWebviewMessage(
           environment,
           accessToken: token.accessToken
         });
-        const payload: { credentials: ApiKeyCredential[] } = {
+        const payload: { credentials: ApiKeyCredential[]; portalBase?: string } = {
           credentials: [...credentials].sort(
             (left, right) => Date.parse(right.created) - Date.parse(left.created)
           )
@@ -178,6 +178,15 @@ async function handleWebviewMessage(
         const warnings = services.restClient.getLastResponseValidationWarnings();
         if (warnings.length > 0) {
           (payload as Record<string, unknown>).warnings = warnings;
+        }
+
+        try {
+          payload.portalBase = await services.restClient.fetchPortalBase({
+            environment,
+            accessToken: token.accessToken
+          });
+        } catch {
+          // Non-critical; links simply won't appear without a portalBase.
         }
 
         return {

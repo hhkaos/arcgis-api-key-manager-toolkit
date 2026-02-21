@@ -7,7 +7,6 @@ import {
   type WebviewToHostMessage
 } from '@arcgis-api-keys/core';
 import '@arcgis-api-keys/core/components';
-import { ChromeClipboardAdapter } from './adapters/chrome-clipboard-adapter.js';
 import { CHROME_MESSAGE_SCOPE, isChromePushMessage, isHostMessage } from './runtime-types.js';
 
 interface CredentialListElement extends HTMLElement {
@@ -15,6 +14,7 @@ interface CredentialListElement extends HTMLElement {
   selectedCredentialId: string | null;
   loading: boolean;
   errorMessage: string;
+  portalBase: string;
 }
 
 interface CredentialDetailElement extends HTMLElement {
@@ -50,13 +50,11 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   private readonly signOutButton = document.createElement('button');
   private readonly refreshButton = document.createElement('button');
   private readonly backButton = document.createElement('button');
-  private readonly copyLastKeyButton = document.createElement('button');
   private readonly credentialsEl = document.createElement('credential-list') as CredentialListElement;
   private readonly detailEl = document.createElement('credential-detail') as CredentialDetailElement;
   private readonly modalEl = document.createElement('key-action-modal') as KeyActionModalElement;
 
   private authState: AuthState = 'checking';
-  private readonly clipboard = new ChromeClipboardAdapter();
   private credentials: ApiKeyCredential[] = [];
   private selectedCredentialId: string | null = null;
   private selectedCredential: ApiKeyCredential | null = null;
@@ -135,8 +133,6 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.backButton.style.color = '#ffffff';
     this.backButton.style.borderColor = '#0b63ce';
     this.backButton.style.fontWeight = '700';
-    setupButton(this.copyLastKeyButton, 'Copy Last Key');
-
     this.signInButton.addEventListener('click', () => {
       this.clearError();
       this.authState = 'logging-in';
@@ -158,22 +154,6 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.detailMode = false;
       this.syncUiState();
       this.statusEl.textContent = `Loaded ${this.credentials.length} credentials.`;
-    });
-
-    this.copyLastKeyButton.addEventListener('click', async () => {
-      if (!this.modalEl.resultKey) {
-        return;
-      }
-
-      try {
-        this.clearError();
-        await this.clipboard.copy(this.modalEl.resultKey);
-        this.statusEl.textContent = 'Copied last generated key.';
-      } catch (error) {
-        this.errorEl.hidden = false;
-        this.errorEl.textContent =
-          error instanceof Error ? error.message : 'Failed to copy key to clipboard.';
-      }
     });
 
     this.credentialsEl.addEventListener('credential-refresh', () => {
@@ -272,8 +252,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.signInButton,
       this.signOutButton,
       this.refreshButton,
-      this.backButton,
-      this.copyLastKeyButton
+      this.backButton
     );
 
     root.append(
@@ -360,6 +339,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.credentialsEl.loading = false;
       this.credentialsEl.errorMessage = '';
       this.credentialsEl.credentials = this.credentials;
+      this.credentialsEl.portalBase = message.payload.portalBase ?? '';
       this.setKeysLoading(false);
 
       if (!this.selectedCredentialId || !this.credentials.some((item) => item.id === this.selectedCredentialId)) {
@@ -455,7 +435,6 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.signOutButton.disabled = isBusy;
     this.refreshButton.disabled = isBusy;
     this.backButton.disabled = isBusy;
-    this.copyLastKeyButton.disabled = isBusy || !this.modalEl.resultKey;
 
     this.credentialsEl.hidden = this.authState !== 'logged-in' || this.detailMode;
     this.detailEl.hidden = this.authState !== 'logged-in' || !this.detailMode;

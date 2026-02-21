@@ -27,10 +27,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Core:** `filterCredentials()` now also matches against referrer domains (case-insensitive) in addition to credential name.
 - **Core:** New unit tests for create/regenerate/revoke REST flows, expiration validation, and enterprise endpoint targeting.
 - **Core:** New protocol unit test confirming revoke action round-trips through serialization correctly.
+- **Core:** `expiration` field on `KeySlotStatus` model for per-slot key expiration date (mapped from API token slot metadata).
+- **Core:** `fetchPortalBase()` REST method resolving the org-scoped portal base URL via `/portals/self` (falls back to `arcgis.com` for Online).
+- **Core:** `keyLabel` attribute on `<expiration-badge>` to prefix slot badges with K1/K2 identifiers in list rows.
+- **Core:** Per-slot expiration badges (K1, K2) in `<credential-list>` rows; column header row added above credential entries.
+- **Core:** Settings deep-link (↗) per credential row in `<credential-list>` that opens the ArcGIS item settings page in a new tab (requires `portalBase`).
+- **Core:** `portalBase` property on `<credential-list>`; `portalBase` field added to `host/credentials` messaging protocol payload.
 
 - **VS Code:** `executeKeyActionForEnvironment` now handles the `revoke` action and dispatches to `revokeApiKey`.
+- **VS Code:** Resolves and forwards `portalBase` in the credentials payload so list rows display settings links.
+- **VS Code:** Replaced generic placeholder icon with Esri-branded API keys SVG.
 
 - **Chrome:** Explorer and service worker now handle the `revoke` action and dispatch to `revokeApiKey`.
+- **Chrome:** Service worker resolves and passes `portalBase` in `host/credentials` payload.
+- **Chrome:** Extension icons declared in manifest at 16/32/48/128px sizes.
 
 ### Changed
 
@@ -40,6 +50,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Core:** Key slot labels updated to "Primary key (slot 1)" / "Secondary key (slot 2)" and button labels updated to "Generate a primary/secondary API key" for create actions.
 - **Core:** Credential list search label updated to "Search Name or Referrer" with matching placeholder text.
 - **Core:** `CredentialKeyActionRequest` in messaging protocol uses `KeyMutationAction` union type rather than an inline literal.
+- **Core:** `<credential-list>` layout updated to Name / Keys / Details columns with unified column headers; per-slot expiration badges (K1/K2) replace the single credential-level badge.
+- **Core:** `<credential-detail>` now shows expiration per key slot card; top-level expiration row hidden for new-style credentials (non-legacy).
+- **Core:** `<expiration-badge>` fixes grammar: "Doesn't expires" → "Doesn't expire".
+
+- **VS Code:** `webview-ui.ts` passes `portalBase` to `<credential-list>` element.
+
+- **Chrome:** `copyLastKeyButton` removed from explorer page (copy functionality is handled within `<key-action-modal>`).
 
 - Refreshed explorer UI to a compact, square-corner, Material-inspired visual style across shared components and VS Code webview shell.
 - Updated webview and component theming to use VS Code theme tokens (`--vscode-*`) with cross-host fallbacks so UI automatically matches active VS Code theme/profile.

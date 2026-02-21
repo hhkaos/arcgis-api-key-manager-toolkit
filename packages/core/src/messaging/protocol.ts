@@ -40,7 +40,7 @@ export interface HostErrorPayload {
 
 export type HostToWebviewMessage =
   | ProtocolEnvelope<'host/state', HostStatePayload>
-  | ProtocolEnvelope<'host/credentials', { credentials: ApiKeyCredential[] }>
+  | ProtocolEnvelope<'host/credentials', { credentials: ApiKeyCredential[]; portalBase?: string }>
   | ProtocolEnvelope<'host/credential-detail', { credential: ApiKeyCredential }>
   | ProtocolEnvelope<'host/key-action-result', { result: KeyMutationResult }>
   | ProtocolEnvelope<'host/error', HostErrorPayload>;

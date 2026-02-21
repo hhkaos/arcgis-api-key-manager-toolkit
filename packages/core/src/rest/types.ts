@@ -50,9 +50,15 @@ export interface ArcGisClientCapabilities {
   reason?: string;
 }
 
+export interface FetchPortalBaseOptions {
+  environment: EnvironmentConfig;
+  accessToken: string;
+}
+
 export interface ArcGisRestClient {
   fetchCredentials(options: FetchCredentialsOptions): Promise<ApiKeyCredential[]>;
   fetchCredentialDetail(options: FetchCredentialDetailOptions): Promise<ApiKeyCredential>;
+  fetchPortalBase(options: FetchPortalBaseOptions): Promise<string>;
   createApiKey(options: KeyMutationOptions): Promise<KeyMutationResult>;
   regenerateApiKey(options: KeyMutationOptions): Promise<KeyMutationResult>;
   revokeApiKey(options: KeyMutationOptions): Promise<KeyMutationResult>;

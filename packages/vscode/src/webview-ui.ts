@@ -22,6 +22,7 @@ type CredentialListElement = HTMLElement & {
   selectedCredentialId: string | null;
   loading: boolean;
   errorMessage: string;
+  portalBase: string;
 };
 
 type CredentialDetailElement = HTMLElement & {
@@ -310,6 +311,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.credentialsEl.loading = false;
       this.credentialsEl.errorMessage = '';
       this.credentialsEl.credentials = this.credentials;
+      this.credentialsEl.portalBase = message.payload.portalBase ?? '';
       this.setKeysLoading(false);
 
       if (!this.selectedCredentialId || !this.credentials.some((item) => item.id === this.selectedCredentialId)) {
