@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **CI/Tests:** Updated `packages/core` and `packages/vscode` test scripts to run Node test discovery from `dist-test/test` (`cd dist-test/test && node --test`) so GitHub Actions on Node 20 does not treat a quoted glob as a literal path.
+
 ---
 
 ## [1.0.0] - 2026-02-22

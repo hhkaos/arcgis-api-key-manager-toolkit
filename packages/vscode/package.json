@@ -112,7 +112,7 @@
   "scripts": {
     "build": "node ./scripts/build.mjs",
     "watch": "node ./scripts/build.mjs --watch",
-    "test": "tsc -p tsconfig.test.json && node --test \"dist-test/test/**/*.test.js\"",
+    "test": "tsc -p tsconfig.test.json && cd dist-test/test && node --test",
     "package": "npx @vscode/vsce package --no-dependencies"
   },
   "dependencies": {
