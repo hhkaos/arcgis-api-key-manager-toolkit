@@ -25,6 +25,7 @@ export interface KeySlotStatus {
 export interface ApiKeyCredential {
   id: string;
   name: string;
+  snippet?: string;
   tags: string[];
   privileges: string[];
   created: string;

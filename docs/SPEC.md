@@ -18,7 +18,8 @@ Provide a secure developer tool that allows an authenticated ArcGIS user to:
 
 - Sign in via OAuth 2.0 (Authorization Code + PKCE)
 - List their own API Key Credentials
-- Explore metadata (name, tags, expiration, privileges, referrer restrictions)
+- Explore metadata (name, snippet, tags, expiration, privileges, referrer restrictions)
+- Edit credential metadata (name, snippet, tags) inline without leaving the extension
 - See whether API Key 1 and/or API Key 2 exist
 - Create, regenerate, or revoke API Key 1 or API Key 2
 - Copy newly generated keys (shown once only)

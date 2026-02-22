@@ -7,9 +7,11 @@ import type {
   ArcGisRestTransport,
   FetchCredentialDetailOptions,
   FetchCredentialsOptions,
+  FetchUserTagsOptions,
   KeyMutationAction,
   KeyMutationOptions,
-  KeyMutationResult
+  KeyMutationResult,
+  UpdateItemMetadataOptions
 } from './types.js';
 
 const DEFAULT_PAGE_SIZE = 100;
@@ -44,10 +46,15 @@ interface ItemOwnerResponse {
 }
 
 interface CommunitySelfResponse {
+  id?: string;
   username?: string;
   user?: {
     username?: string;
   };
+}
+
+interface UserTagsResponse {
+  tags?: Array<{ tag?: string; count?: number } | string>;
 }
 
 interface PortalSelfResponse {
@@ -58,6 +65,13 @@ interface PortalSelfResponse {
     username?: string;
   };
   username?: string;
+}
+
+interface ItemGroupsResponse {
+  snippet?: unknown;
+  groups?: unknown[];
+  results?: unknown[];
+  items?: unknown[];
 }
 
 type ValidationEndpointKey =
@@ -296,6 +310,93 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
         canRegenerateApiKey: false,
         reason: 'Unable to detect Enterprise capabilities for this portal.'
       };
+    }
+  }
+
+  public async fetchUserTags(options: FetchUserTagsOptions): Promise<string[]> {
+    try {
+      const selfResponse = await this.transport.request<CommunitySelfResponse>({
+        path: '/community/self',
+        method: 'GET',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        query: { f: 'json', returnUserLicensedItems: true }
+      });
+
+      const userId = readLooseString(selfResponse.id);
+      if (!userId) {
+        return [];
+      }
+
+      const tagsResponse = await this.transport.request<UserTagsResponse>({
+        path: `/community/users/${encodeURIComponent(userId)}/tags`,
+        method: 'GET',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        query: { f: 'json' }
+      });
+
+      const tags = tagsResponse.tags;
+      if (!Array.isArray(tags)) {
+        return [];
+      }
+
+      return tags
+        .map((item) => {
+          if (typeof item === 'string') return item.trim();
+          if (isRecord(item)) return readLooseString(item.tag) ?? '';
+          return '';
+        })
+        .filter((tag) => tag.length > 0);
+    } catch {
+      return [];
+    }
+  }
+
+  public async updateItemMetadata(options: UpdateItemMetadataOptions): Promise<void> {
+    try {
+      const item = await this.transport.request<ItemOwnerResponse>({
+        path: `/content/items/${encodeURIComponent(options.credentialId)}`,
+        method: 'GET',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        query: { f: 'json' }
+      });
+
+      const owner = readLooseString(item.owner);
+      if (!owner) {
+        throw {
+          error: {
+            code: 500,
+            message: 'ArcGIS item response did not include an owner for this credential.'
+          }
+        };
+      }
+
+      const response = await this.transport.request<{ success?: boolean }>({
+        path: `/content/users/${encodeURIComponent(owner)}/items/${encodeURIComponent(options.credentialId)}/update`,
+        method: 'POST',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        body: {
+          f: 'json',
+          title: options.title,
+          snippet: options.snippet,
+          tags: options.tags.join(','),
+          clearEmptyFields: true
+        }
+      });
+
+      if (response.success === false) {
+        throw {
+          error: {
+            code: 500,
+            message: 'ArcGIS did not confirm the item metadata update.'
+          }
+        };
+      }
+    } catch (error) {
+      throw mapRestError(error);
     }
   }
 
@@ -624,12 +725,18 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
     const itemRecord = isRecord(itemPayload) ? itemPayload : {};
     const owner = readLooseString(itemRecord.owner);
 
-    const [registeredAppPayload, legacyPayload] = await Promise.all([
+    const [registeredAppPayload, legacyPayload, groupsSnippet] = await Promise.all([
       this.fetchRegisteredAppInfo(options, owner, validator),
-      includeLegacyPayload ? this.fetchLegacyCredentialDetail(options) : Promise.resolve(undefined)
+      includeLegacyPayload ? this.fetchLegacyCredentialDetail(options) : Promise.resolve(undefined),
+      this.fetchItemGroupsSnippet(options)
     ]);
 
-    const mergedPayload = mergeRecords(itemRecord, registeredAppPayload, legacyPayload);
+    const mergedPayload = mergeRecords(
+      itemRecord,
+      registeredAppPayload,
+      legacyPayload,
+      groupsSnippet ? { snippet: groupsSnippet } : undefined
+    );
     return toCredential(mergedPayload);
   }
 
@@ -715,6 +822,22 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
     }
   }
 
+  private async fetchItemGroupsSnippet(options: FetchCredentialDetailOptions): Promise<string | undefined> {
+    try {
+      const response = await this.transport.request<ItemGroupsResponse>({
+        path: `/content/items/${encodeURIComponent(options.credentialId)}/groups`,
+        method: 'GET',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        query: { f: 'json' }
+      });
+
+      return readSnippetFromGroupsResponse(response);
+    } catch {
+      return undefined;
+    }
+  }
+
   private extractCredentials(response: ArcGisPagedCredentialsResponse): ApiKeyCredential[] {
     const records =
       toArray(response.credentials) ??
@@ -756,6 +879,29 @@ export function getArcGisRestBaseUrl(environment: EnvironmentConfig): string {
 
 function toArray(value: unknown): unknown[] | null {
   return Array.isArray(value) ? value : null;
+}
+
+function readSnippetFromGroupsResponse(response: ItemGroupsResponse): string | undefined {
+  const directSnippet = readLooseString(response.snippet);
+  if (directSnippet) {
+    return directSnippet;
+  }
+
+  const groupRecords =
+    toArray(response.groups) ?? toArray(response.results) ?? toArray(response.items) ?? [];
+
+  for (const group of groupRecords) {
+    if (!isRecord(group)) {
+      continue;
+    }
+
+    const snippet = readLooseString(group.snippet);
+    if (snippet) {
+      return snippet;
+    }
+  }
+
+  return undefined;
 }
 
 function computePartialId(
@@ -884,6 +1030,7 @@ function toCredential(record: unknown): ApiKeyCredential | null {
   return {
     id,
     name: readLooseString(source.name) ?? readLooseString(source.title) ?? id,
+    snippet: readLooseString(source.snippet),
     tags: toStringArray(source.tags) ?? [],
     privileges: toStringArray(source.privileges) ?? toStringArray(source.scopes) ?? [],
     created,

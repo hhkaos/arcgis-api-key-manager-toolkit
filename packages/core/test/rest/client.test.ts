@@ -230,6 +230,9 @@ test('fetchCredentialDetail merges item and registered app responses for online'
     {
       key1: { exists: true, partialId: 'b3169iiQ', created: 1710000000000 },
       key2: { exists: false }
+    },
+    {
+      groups: [{ snippet: 'Used by the basemap demo app.' }]
     }
   ]);
 
@@ -243,6 +246,7 @@ test('fetchCredentialDetail merges item and registered app responses for online'
   assert.equal(transport.calls[0]?.path, '/content/items/item-id');
   assert.equal(transport.calls[1]?.path, '/content/users/hhkaos2/items/item-id/registeredAppInfo');
   assert.equal(transport.calls[2]?.path, '/portals/self/apiKeys/item-id');
+  assert.equal(transport.calls[3]?.path, '/content/items/item-id/groups');
 
   assert.equal(credential.id, 'item-id');
   assert.deepEqual(credential.tags, ['basemaps']);
@@ -251,6 +255,7 @@ test('fetchCredentialDetail merges item and registered app responses for online'
   assert.equal(credential.key1.exists, true);
   assert.equal(credential.key1.partialId, 'AT1_H4JC97kO');
   assert.equal(credential.expiration, new Date(itemExpiration).toISOString());
+  assert.equal(credential.snippet, 'Used by the basemap demo app.');
 });
 
 test('fetchCredentialDetail marks active token slots from registeredAppInfo booleans', async () => {
@@ -269,7 +274,8 @@ test('fetchCredentialDetail marks active token slots from registeredAppInfo bool
       apiToken2Active: false,
       privileges: []
     },
-    {}
+    {},
+    { groups: [] }
   ]);
 
   const client = new ArcGisRestClientImpl(transport);
@@ -301,7 +307,8 @@ test('fetchCredentialDetail derives partial IDs from registered app client ID fo
       apiToken2Active: true,
       privileges: []
     },
-    {}
+    {},
+    { groups: [] }
   ]);
 
   const client = new ArcGisRestClientImpl(transport);
@@ -370,12 +377,14 @@ test('fetchCredentials enriches online list rows with detail metadata', async ()
       apiToken1Active: true,
       apiToken2Active: false
     },
+    { groups: [] },
     {
       privileges: ['premium:user:geocode'],
       httpReferrers: [],
       apiToken1Active: false,
       apiToken2Active: true
-    }
+    },
+    { groups: [] }
   ]);
 
   const client = new ArcGisRestClientImpl(transport);
@@ -429,7 +438,8 @@ test('fetchCredentials reports missing expected fields from first endpoint respo
       privileges: [],
       httpReferrers: [],
       apiToken1Active: true
-    }
+    },
+    { groups: [] }
   ]);
 
   const client = new ArcGisRestClientImpl(transport);

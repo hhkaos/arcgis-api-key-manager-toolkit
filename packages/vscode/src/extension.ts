@@ -357,12 +357,84 @@ async function handleWebviewMessage(
     case 'webview/key-action':
       await executeKeyActionForEnvironment(services, environment, panel, message.payload);
       break;
+    case 'webview/fetch-user-tags':
+      await fetchUserTagsForEnvironment(services, environment, panel);
+      break;
+    case 'webview/update-credential-metadata':
+      await updateCredentialMetadataForEnvironment(services, environment, panel, message.payload);
+      break;
     case 'webview/open-external-url':
       await openExternalUrlForPanel(services, panel, message.payload.url);
       break;
     default:
       await handleUnsupportedWebviewMessage(panel, message);
       break;
+  }
+}
+
+async function fetchUserTagsForEnvironment(
+  services: ExtensionServices,
+  environment: EnvironmentConfig,
+  panel: vscode.WebviewPanel
+): Promise<void> {
+  const token = await getValidAccessToken(services, environment, panel);
+  if (!token) {
+    return;
+  }
+
+  const tags = await services.restClient.fetchUserTags({ environment, accessToken: token });
+  services.webviewPanels.post(panel, {
+    type: 'host/user-tags',
+    payload: { tags }
+  });
+}
+
+async function updateCredentialMetadataForEnvironment(
+  services: ExtensionServices,
+  environment: EnvironmentConfig,
+  panel: vscode.WebviewPanel,
+  payload: {
+    credentialId: string;
+    title: string;
+    snippet: string;
+    tags: string[];
+  }
+): Promise<void> {
+  const token = await getValidAccessToken(services, environment, panel);
+  if (!token) {
+    return;
+  }
+
+  try {
+    await services.restClient.updateItemMetadata({
+      environment,
+      accessToken: token,
+      credentialId: payload.credentialId,
+      title: payload.title,
+      snippet: payload.snippet,
+      tags: payload.tags
+    });
+
+    const credential = await services.restClient.fetchCredentialDetail({
+      environment,
+      accessToken: token,
+      credentialId: payload.credentialId
+    });
+
+    services.webviewPanels.post(panel, {
+      type: 'host/credential-metadata-updated',
+      payload: { credential }
+    });
+  } catch (error) {
+    const mapped = normalizeRestError(error);
+    services.webviewPanels.post(panel, {
+      type: 'host/error',
+      payload: {
+        message: mapped.message,
+        code: mapped.code,
+        recoverable: mapped.recoverable
+      }
+    });
   }
 }
 

@@ -8,12 +8,26 @@ import type {
   ExpirationCategory
 } from '../types/models.js';
 import './expiration-badge.js';
+import type { CredentialUpdateRequestDetail } from './credential-detail.js';
+
+export type { CredentialUpdateRequestDetail };
 
 export interface CredentialSelectDetail {
   credentialId: string;
 }
 
 type SortOption = 'name-asc' | 'expiration-asc' | 'expiration-desc' | 'created-desc';
+type EditField = 'title' | 'snippet' | 'tags';
+
+interface EditingState {
+  credentialId: string;
+  field: EditField;
+  title: string;
+  snippet: string;
+  tags: string[];
+  tagInput: string;
+  tagDropdownOpen: boolean;
+}
 
 export class CredentialListElement extends LitElement {
   public static override properties = {
@@ -22,12 +36,15 @@ export class CredentialListElement extends LitElement {
     loading: { type: Boolean },
     errorMessage: { type: String, attribute: 'error-message' },
     portalBase: { type: String, attribute: 'portal-base' },
+    availableTags: { attribute: false },
     searchText: { state: true },
     searchDraft: { state: true },
     filterTag: { state: true },
     filterPrivilege: { state: true },
     filterExpiration: { state: true },
-    sortOption: { state: true }
+    sortOption: { state: true },
+    _editingState: { state: true },
+    _saving: { state: true }
   };
 
   public static override styles = css`
@@ -74,6 +91,59 @@ export class CredentialListElement extends LitElement {
       color: var(--akm-muted);
       letter-spacing: 0.02em;
       text-transform: uppercase;
+    }
+
+    .label-with-info {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .info-tooltip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .info-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 12px;
+      height: 12px;
+      border: 1px solid var(--akm-muted);
+      border-radius: 50%;
+      color: var(--akm-muted);
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: help;
+      text-transform: none;
+    }
+
+    .info-tooltip-content {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      z-index: 1;
+      border: 1px solid var(--akm-border);
+      background: var(--akm-surface-raised);
+      color: var(--akm-text);
+      padding: 6px 8px;
+      font-size: 11px;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      white-space: nowrap;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .info-tooltip:hover .info-tooltip-content,
+    .info-tooltip:focus-within .info-tooltip-content {
+      visibility: visible;
+      opacity: 1;
     }
 
     input,
@@ -149,12 +219,7 @@ export class CredentialListElement extends LitElement {
       background: var(--akm-surface-raised);
       text-align: left;
       width: 100%;
-      border-right: none;
-      border-left: none;
-      border-bottom: none;
-      border-radius: 0;
-      font-family: var(--akm-font);
-      color: var(--akm-text);
+      cursor: pointer;
     }
 
     .row:hover {
@@ -185,6 +250,20 @@ export class CredentialListElement extends LitElement {
       border-radius: 0;
       padding: 2px 6px;
       font-size: 11px;
+    }
+
+    .chip-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--akm-muted);
+      font-size: 11px;
+      padding: 0 0 0 4px;
+      line-height: 1;
+    }
+
+    .chip-remove:hover {
+      color: var(--vscode-errorForeground, #b42318);
     }
 
     .error {
@@ -234,6 +313,148 @@ export class CredentialListElement extends LitElement {
     .settings-link:hover {
       color: var(--akm-primary);
     }
+
+    /* Inline edit styles */
+    .editable-field {
+      position: relative;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 4px;
+      max-width: 100%;
+    }
+
+    .pencil-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--akm-muted);
+      font-size: 11px;
+      padding: 0 2px;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity 0.1s;
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    .editable-field:hover .pencil-btn {
+      opacity: 1;
+    }
+
+    .pencil-btn:focus {
+      opacity: 1;
+      outline: 1px solid var(--akm-focus);
+    }
+
+    .inline-input {
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--akm-font);
+      color: var(--akm-text);
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--akm-focus);
+      padding: 0 2px 1px;
+      width: 100%;
+      min-width: 80px;
+      outline: none;
+    }
+
+    .inline-snippet-input {
+      font-size: 11px;
+      font-weight: 400;
+      font-family: var(--akm-font);
+      color: var(--akm-muted);
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--akm-focus);
+      padding: 0 2px 1px;
+      width: 100%;
+      min-width: 80px;
+      outline: none;
+    }
+
+    .field-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 3px;
+    }
+
+    .save-btn,
+    .cancel-btn {
+      background: none;
+      border: 1px solid var(--akm-border);
+      cursor: pointer;
+      font-size: 10px;
+      padding: 1px 6px;
+      font-family: var(--akm-font);
+      border-radius: 0;
+    }
+
+    .save-btn {
+      color: var(--akm-primary);
+      border-color: var(--akm-primary);
+    }
+
+    .save-btn:hover {
+      background: var(--akm-primary);
+      color: var(--akm-primary-foreground);
+    }
+
+    .cancel-btn {
+      color: var(--akm-muted);
+    }
+
+    .cancel-btn:hover {
+      border-color: var(--akm-muted);
+      color: var(--akm-text);
+    }
+
+    .tags-edit-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      align-items: center;
+      border-bottom: 1px solid var(--akm-focus);
+      padding-bottom: 2px;
+      min-width: 100px;
+    }
+
+    .tag-input {
+      border: none;
+      background: transparent;
+      font-size: 11px;
+      font-family: var(--akm-font);
+      color: var(--akm-text);
+      outline: none;
+      min-width: 60px;
+      flex: 1;
+      padding: 1px 2px;
+    }
+
+    .tag-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      z-index: 100;
+      background: var(--akm-surface-raised);
+      border: 1px solid var(--akm-border);
+      min-width: 140px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    .tag-dropdown-item {
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: var(--akm-font);
+      color: var(--akm-text);
+    }
+
+    .tag-dropdown-item:hover {
+      background: var(--akm-hover);
+    }
   `;
 
   public credentials: ApiKeyCredential[] = [];
@@ -241,6 +462,7 @@ export class CredentialListElement extends LitElement {
   public loading: boolean = false;
   public errorMessage: string = '';
   public portalBase: string = '';
+  public availableTags: string[] = [];
 
   private searchText: string = '';
   private searchDraft: string = '';
@@ -248,6 +470,9 @@ export class CredentialListElement extends LitElement {
   private filterPrivilege: string = '';
   private filterExpiration: '' | ExpirationCategory = '';
   private sortOption: SortOption = 'created-desc';
+  private _editingState: EditingState | null = null;
+  private _saving: boolean = false;
+  private _cancelRequested: boolean = false;
 
   private readonly applySearchDebounced = debounce((value: string) => {
     this.searchText = value;
@@ -256,6 +481,16 @@ export class CredentialListElement extends LitElement {
   public override disconnectedCallback(): void {
     this.applySearchDebounced.cancel();
     super.disconnectedCallback();
+  }
+
+  public override updated(changed: Map<string, unknown>): void {
+    if (changed.has('credentials') && this._saving && this._editingState) {
+      const updatedCred = this.credentials.find(c => c.id === this._editingState!.credentialId);
+      if (updatedCred) {
+        this._editingState = null;
+        this._saving = false;
+      }
+    }
   }
 
   public override render() {
@@ -267,11 +502,17 @@ export class CredentialListElement extends LitElement {
       <section class="panel">
         <div class="toolbar">
           <label>
-            Search Name or Referrer
+            <span class="label-with-info">
+              <span>Search</span>
+              <span class="info-tooltip">
+                <span class="info-icon" tabindex="0" aria-label="Search supports Name, Referrer, or Partial API Key">ℹ</span>
+                <span class="info-tooltip-content" role="tooltip">Name, Referrer, or Partial API Key</span>
+              </span>
+            </span>
             <input
               type="text"
               .value=${this.searchDraft}
-              placeholder="Find credential or referrer"
+              placeholder="Search"
               @input=${this.handleSearchInput}
               ?disabled=${this.loading}
             />
@@ -332,56 +573,279 @@ export class CredentialListElement extends LitElement {
                     <span class="col-heading">Credential</span>
                     <span class="col-heading">Keys</span>
                     <span class="col-heading">Details</span>
-                    <span></span>
+                    <span class="col-heading">Item</span>
                   </div>
-                  ${filteredCredentials.map(
-                    (credential) => html`
-                      <button
-                        type="button"
-                        class="row ${this.selectedCredentialId === credential.id ? 'selected' : ''}"
-                        @click=${() => this.handleSelectCredential(credential.id)}
-                      >
-                        <div>
-                          <div class="name">${credential.name}</div>
-                          <div class="subtle">${credential.tags.join(', ') || 'No tags'}</div>
-                        </div>
-                        <div class="expiration-slots">
-                          ${
-                            credential.isLegacy
-                              ? html`<expiration-badge .expiration=${credential.expiration} .nonExpiring=${true}></expiration-badge>`
-                              : html`
-                                  ${credential.key1.exists && credential.key1.expiration
-                                    ? html`<expiration-badge .expiration=${credential.key1.expiration} key-label="K1"></expiration-badge>`
-                                    : html`<span class="key-slot-missing">K1 not set</span>`}
-                                  ${credential.key2.exists && credential.key2.expiration
-                                    ? html`<expiration-badge .expiration=${credential.key2.expiration} key-label="K2"></expiration-badge>`
-                                    : html`<span class="key-slot-missing">K2 not set</span>`}
-                                `
-                          }
-                        </div>
-                        <div>
-                          <div class="subtle">${credential.privileges.length} privileges</div>
-                          <div class="subtle">${credential.referrers.length} referrers</div>
-                        </div>
-                        <div>
-                          ${this.portalBase
-                            ? html`<a
-                                class="settings-link"
-                                href="${this.portalBase}/home/item.html?id=${credential.id}#settings"
-                                target="_blank"
-                                title="Open item settings"
-                                @click=${(e: Event) => e.stopPropagation()}
-                              >↗</a>`
-                            : null}
-                        </div>
-                      </button>
-                    `
-                  )}
+                  ${filteredCredentials.map((credential) => this.renderRow(credential))}
                 `
           }
         </div>
       </section>
     `;
+  }
+
+  private renderRow(credential: ApiKeyCredential) {
+    const isSelected = this.selectedCredentialId === credential.id;
+    const es = this._editingState?.credentialId === credential.id ? this._editingState : null;
+
+    return html`
+      <div
+        class="row ${isSelected ? 'selected' : ''}"
+        tabindex="0"
+        role="button"
+        @click=${() => this.handleRowClick(credential.id)}
+        @keydown=${(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') this.handleRowClick(credential.id); }}
+      >
+        <div>
+          ${this.renderTitleField(credential, es)}
+          ${this.renderSnippetField(credential, es)}
+          ${this.renderTagsField(credential, es)}
+        </div>
+        <div class="expiration-slots">
+          ${
+            credential.isLegacy
+              ? html`<expiration-badge .expiration=${credential.expiration} .nonExpiring=${true}></expiration-badge>`
+              : html`
+                  ${credential.key1.exists && credential.key1.expiration
+                    ? html`<expiration-badge .expiration=${credential.key1.expiration} key-label="K1"></expiration-badge>`
+                    : html`<span class="key-slot-missing">K1 not set</span>`}
+                  ${credential.key2.exists && credential.key2.expiration
+                    ? html`<expiration-badge .expiration=${credential.key2.expiration} key-label="K2"></expiration-badge>`
+                    : html`<span class="key-slot-missing">K2 not set</span>`}
+                `
+          }
+        </div>
+        <div>
+          <div class="subtle">${credential.privileges.length} privileges</div>
+          <div class="subtle">${credential.referrers.length} referrers</div>
+        </div>
+        <div>
+          ${this.portalBase
+            ? html`<a
+                class="settings-link"
+                href="${this.portalBase}/home/item.html?id=${credential.id}#settings"
+                target="_blank"
+                title="Open item settings"
+                @click=${(e: Event) => e.stopPropagation()}
+              >↗</a>`
+            : null}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderTitleField(credential: ApiKeyCredential, es: EditingState | null) {
+    const isEditing = es?.field === 'title';
+
+    if (isEditing) {
+      return html`
+        <div @click=${(e: Event) => e.stopPropagation()}>
+          <input
+            class="inline-input"
+            type="text"
+            .value=${es!.title}
+            @input=${(e: Event) => this.patchEditState({ title: (e.target as HTMLInputElement).value })}
+            @focusout=${(e: FocusEvent) => this.handleFieldFocusOut(credential, e)}
+          />
+          <div class="field-actions">
+            <button class="save-btn" @mousedown=${() => { this._cancelRequested = false; }} @click=${(e: Event) => { e.stopPropagation(); this.saveCurrentField(credential); }}>Save</button>
+            <button class="cancel-btn" @mousedown=${() => { this._cancelRequested = true; }} @click=${(e: Event) => { e.stopPropagation(); this.cancelEdit(); }}>Cancel</button>
+          </div>
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="editable-field name">
+        <span>${credential.name}</span>
+        <button
+          class="pencil-btn"
+          title="Edit title"
+          @click=${(e: Event) => { e.stopPropagation(); this.startEdit(credential, 'title'); }}
+        >✎</button>
+      </div>
+    `;
+  }
+
+  private renderSnippetField(credential: ApiKeyCredential, es: EditingState | null) {
+    const isEditing = es?.field === 'snippet';
+
+    if (isEditing) {
+      return html`
+        <div @click=${(e: Event) => e.stopPropagation()}>
+          <input
+            class="inline-snippet-input"
+            type="text"
+            .value=${es!.snippet}
+            placeholder="Add a description…"
+            @input=${(e: Event) => this.patchEditState({ snippet: (e.target as HTMLInputElement).value })}
+            @focusout=${(e: FocusEvent) => this.handleFieldFocusOut(credential, e)}
+          />
+          <div class="field-actions">
+            <button class="save-btn" @mousedown=${() => { this._cancelRequested = false; }} @click=${(e: Event) => { e.stopPropagation(); this.saveCurrentField(credential); }}>Save</button>
+            <button class="cancel-btn" @mousedown=${() => { this._cancelRequested = true; }} @click=${(e: Event) => { e.stopPropagation(); this.cancelEdit(); }}>Cancel</button>
+          </div>
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="editable-field subtle">
+        <span>${credential.snippet || 'No description'}</span>
+        <button
+          class="pencil-btn"
+          title="Edit description"
+          @click=${(e: Event) => { e.stopPropagation(); this.startEdit(credential, 'snippet'); }}
+        >✎</button>
+      </div>
+    `;
+  }
+
+  private renderTagsField(credential: ApiKeyCredential, es: EditingState | null) {
+    const isEditing = es?.field === 'tags';
+
+    if (isEditing) {
+      const suggestions = this.availableTags.filter(
+        t => !es!.tags.includes(t) && t.toLowerCase().includes(es!.tagInput.toLowerCase())
+      );
+      const showDropdown = es!.tagDropdownOpen && (suggestions.length > 0 || es!.tagInput.trim().length > 0);
+
+      return html`
+        <div style="position:relative" @click=${(e: Event) => e.stopPropagation()}>
+          <div class="tags-edit-wrapper">
+            ${es!.tags.map(tag => html`
+              <span class="chip">
+                ${tag}
+                <button class="chip-remove" @mousedown=${(e: Event) => { e.preventDefault(); this.removeTag(tag); }}>×</button>
+              </span>
+            `)}
+            <input
+              class="tag-input"
+              type="text"
+              placeholder="Add tag…"
+              .value=${es!.tagInput}
+              @input=${(e: Event) => this.patchEditState({ tagInput: (e.target as HTMLInputElement).value, tagDropdownOpen: true })}
+              @focus=${() => this.patchEditState({ tagDropdownOpen: true })}
+              @keydown=${(e: KeyboardEvent) => this.handleTagKeydown(e)}
+              @focusout=${(e: FocusEvent) => this.handleFieldFocusOut(credential, e)}
+            />
+          </div>
+          ${showDropdown ? html`
+            <div class="tag-dropdown">
+              ${es!.tagInput.trim() && !es!.tags.includes(es!.tagInput.trim()) ? html`
+                <div class="tag-dropdown-item" @mousedown=${(e: Event) => { e.preventDefault(); this.addTag(es!.tagInput.trim()); }}>
+                  Add: "${es!.tagInput.trim()}"
+                </div>
+              ` : null}
+              ${suggestions.map(t => html`
+                <div class="tag-dropdown-item" @mousedown=${(e: Event) => { e.preventDefault(); this.addTag(t); }}>
+                  ${t}
+                </div>
+              `)}
+            </div>
+          ` : null}
+          <div class="field-actions">
+            <button class="save-btn" @mousedown=${() => { this._cancelRequested = false; }} @click=${(e: Event) => { e.stopPropagation(); this.saveCurrentField(credential); }}>Save</button>
+            <button class="cancel-btn" @mousedown=${() => { this._cancelRequested = true; }} @click=${(e: Event) => { e.stopPropagation(); this.cancelEdit(); }}>Cancel</button>
+          </div>
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="editable-field subtle">
+        <span>🏷️ ${credential.tags.join(', ') || 'No tags'}</span>
+        <button
+          class="pencil-btn"
+          title="Edit tags"
+          @click=${(e: Event) => { e.stopPropagation(); this.startEdit(credential, 'tags'); }}
+        >✎</button>
+      </div>
+    `;
+  }
+
+  private startEdit(credential: ApiKeyCredential, field: EditField): void {
+    this._editingState = {
+      credentialId: credential.id,
+      field,
+      title: credential.name,
+      snippet: credential.snippet ?? '',
+      tags: [...credential.tags],
+      tagInput: '',
+      tagDropdownOpen: false
+    };
+
+    if (field === 'tags') {
+      this.dispatchEvent(new CustomEvent('fetch-user-tags', { bubbles: true, composed: true }));
+    }
+  }
+
+  private cancelEdit(): void {
+    this._editingState = null;
+    this._saving = false;
+    this._cancelRequested = false;
+  }
+
+  private saveCurrentField(credential: ApiKeyCredential): void {
+    if (!this._editingState) return;
+
+    const { title, snippet, tags } = this._editingState;
+    this._saving = true;
+
+    this.dispatchEvent(
+      new CustomEvent<CredentialUpdateRequestDetail>('credential-update-request', {
+        detail: { credentialId: credential.id, title, snippet, tags },
+        bubbles: true,
+        composed: true
+      })
+    );
+  }
+
+  private patchEditState(patch: Partial<EditingState>): void {
+    if (!this._editingState) return;
+    this._editingState = { ...this._editingState, ...patch };
+  }
+
+  private addTag(tag: string): void {
+    if (!this._editingState || this._editingState.tags.includes(tag)) return;
+    this.patchEditState({ tags: [...this._editingState.tags, tag], tagInput: '', tagDropdownOpen: false });
+  }
+
+  private removeTag(tag: string): void {
+    if (!this._editingState) return;
+    this.patchEditState({ tags: this._editingState.tags.filter(t => t !== tag) });
+  }
+
+  private handleTagKeydown(e: KeyboardEvent): void {
+    if (!this._editingState) return;
+    if (e.key === 'Enter' && this._editingState.tagInput.trim()) {
+      e.preventDefault();
+      this.addTag(this._editingState.tagInput.trim());
+    } else if (e.key === 'Escape') {
+      this.patchEditState({ tagDropdownOpen: false });
+    }
+  }
+
+  private handleFieldFocusOut(credential: ApiKeyCredential, event: FocusEvent): void {
+    const related = event.relatedTarget as Node | null;
+    if (related && this.shadowRoot?.contains(related)) return;
+
+    if (this._cancelRequested) {
+      this._cancelRequested = false;
+      return;
+    }
+
+    this.saveCurrentField(credential);
+  }
+
+  private handleRowClick(credentialId: string): void {
+    if (this._editingState?.credentialId === credentialId) return;
+    this.dispatchEvent(
+      new CustomEvent<CredentialSelectDetail>('credential-select', {
+        detail: { credentialId },
+        bubbles: true,
+        composed: true
+      })
+    );
   }
 
   private getFilteredSortedCredentials(): ApiKeyCredential[] {
@@ -448,16 +912,6 @@ export class CredentialListElement extends LitElement {
   private handleRefresh(): void {
     this.dispatchEvent(
       new CustomEvent('credential-refresh', {
-        bubbles: true,
-        composed: true
-      })
-    );
-  }
-
-  private handleSelectCredential(credentialId: string): void {
-    this.dispatchEvent(
-      new CustomEvent<CredentialSelectDetail>('credential-select', {
-        detail: { credentialId },
         bubbles: true,
         composed: true
       })

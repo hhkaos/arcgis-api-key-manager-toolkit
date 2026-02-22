@@ -13,7 +13,10 @@ export function filterCredentials(
       const matchesReferrer = credential.referrers.some((referrer) =>
         referrer.toLowerCase().includes(search)
       );
-      if (!matchesName && !matchesReferrer) {
+      const matchesPartialKey = [credential.key1.partialId, credential.key2.partialId]
+        .filter((value): value is string => Boolean(value))
+        .some((partialId) => partialId.toLowerCase().includes(search));
+      if (!matchesName && !matchesReferrer && !matchesPartialKey) {
         return false;
       }
     }

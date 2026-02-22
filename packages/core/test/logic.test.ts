@@ -19,7 +19,7 @@ const credentials: ApiKeyCredential[] = [
     created: '2026-01-01T00:00:00.000Z',
     expiration: '2026-03-01T00:00:00.000Z',
     referrers: ['https://dev.example.com'],
-    key1: { slot: 1, exists: true },
+    key1: { slot: 1, exists: true, partialId: 'AT1_abc123de' },
     key2: { slot: 2, exists: false }
   },
   {
@@ -30,8 +30,8 @@ const credentials: ApiKeyCredential[] = [
     created: '2025-12-01T00:00:00.000Z',
     expiration: '2026-02-22T00:00:00.000Z',
     referrers: ['*'],
-    key1: { slot: 1, exists: true },
-    key2: { slot: 2, exists: true }
+    key1: { slot: 1, exists: true, partialId: 'AT1_zyx987wv' },
+    key2: { slot: 2, exists: true, partialId: 'AT2_plm456no' }
   }
 ];
 
@@ -42,10 +42,12 @@ test('categorizeExpiration matches v1 thresholds', () => {
   assert.equal(categorizeExpiration('2026-02-19T00:00:00.000Z', now), 'expired');
 });
 
-test('filterCredentials supports search/tag/privilege including partial referrer match', () => {
+test('filterCredentials supports search/tag/privilege including partial referrer and key match', () => {
   assert.equal(filterCredentials(credentials, { search: 'prod' }).length, 1);
   assert.equal(filterCredentials(credentials, { search: 'dev.example' })[0]?.id, 'b');
   assert.equal(filterCredentials(credentials, { search: 'EXAMPLE.COM' }).length, 1);
+  assert.equal(filterCredentials(credentials, { search: 'abc123' })[0]?.id, 'b');
+  assert.equal(filterCredentials(credentials, { search: 'PLM456' })[0]?.id, 'a');
   assert.equal(filterCredentials(credentials, { tag: 'dev' })[0]?.id, 'b');
   assert.equal(filterCredentials(credentials, { privilege: 'routing' })[0]?.id, 'b');
 });

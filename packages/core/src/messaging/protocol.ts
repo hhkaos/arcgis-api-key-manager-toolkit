@@ -38,11 +38,20 @@ export interface HostErrorPayload {
   recoverable: boolean;
 }
 
+export interface CredentialMetadataUpdateRequest {
+  credentialId: string;
+  title: string;
+  snippet: string;
+  tags: string[];
+}
+
 export type HostToWebviewMessage =
   | ProtocolEnvelope<'host/state', HostStatePayload>
   | ProtocolEnvelope<'host/credentials', { credentials: ApiKeyCredential[]; portalBase?: string }>
   | ProtocolEnvelope<'host/credential-detail', { credential: ApiKeyCredential }>
   | ProtocolEnvelope<'host/key-action-result', { result: KeyMutationResult }>
+  | ProtocolEnvelope<'host/user-tags', { tags: string[] }>
+  | ProtocolEnvelope<'host/credential-metadata-updated', { credential: ApiKeyCredential }>
   | ProtocolEnvelope<'host/error', HostErrorPayload>;
 
 export type WebviewToHostMessage =
@@ -54,7 +63,9 @@ export type WebviewToHostMessage =
   | ProtocolEnvelope<'webview/load-credential-detail', { credentialId: string }>
   | ProtocolEnvelope<'webview/key-action', CredentialKeyActionRequest>
   | ProtocolEnvelope<'webview/open-external-url', { url: string }>
-  | ProtocolEnvelope<'webview/ack-error', { code?: string }>;
+  | ProtocolEnvelope<'webview/ack-error', { code?: string }>
+  | ProtocolEnvelope<'webview/fetch-user-tags', Record<string, never>>
+  | ProtocolEnvelope<'webview/update-credential-metadata', CredentialMetadataUpdateRequest>;
 
 export type WebviewProtocolMessage = HostToWebviewMessage | WebviewToHostMessage;
 
@@ -98,6 +109,8 @@ function isProtocolMessage(value: unknown): value is WebviewProtocolMessage {
     'host/credentials',
     'host/credential-detail',
     'host/key-action-result',
+    'host/user-tags',
+    'host/credential-metadata-updated',
     'host/error',
     'webview/initialize',
     'webview/select-environment',
@@ -107,7 +120,9 @@ function isProtocolMessage(value: unknown): value is WebviewProtocolMessage {
     'webview/load-credential-detail',
     'webview/key-action',
     'webview/open-external-url',
-    'webview/ack-error'
+    'webview/ack-error',
+    'webview/fetch-user-tags',
+    'webview/update-credential-metadata'
   ]);
 
   return allowedTypes.has(value.type);

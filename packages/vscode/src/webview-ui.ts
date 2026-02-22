@@ -23,6 +23,7 @@ type CredentialListElement = HTMLElement & {
   loading: boolean;
   errorMessage: string;
   portalBase: string;
+  availableTags: string[];
 };
 
 type CredentialDetailElement = HTMLElement & {
@@ -30,6 +31,7 @@ type CredentialDetailElement = HTMLElement & {
   loading: boolean;
   errorMessage: string;
   portalBase: string;
+  availableTags: string[];
 };
 
 type KeyActionModalElement = HTMLElement & {
@@ -179,6 +181,33 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       });
     });
     this.credentialsEl.addEventListener('click', (event: Event) => this.handleExternalLinkClick(event), true);
+
+    this.credentialsEl.addEventListener('fetch-user-tags', () => {
+      this.post({ type: 'webview/fetch-user-tags', payload: {} });
+    });
+
+    this.credentialsEl.addEventListener('credential-update-request', (event: Event) => {
+      const detail = (event as CustomEvent<{
+        credentialId: string;
+        title: string;
+        snippet: string;
+        tags: string[];
+      }>).detail;
+      if (!detail) {
+        return;
+      }
+
+      this.post({
+        type: 'webview/update-credential-metadata',
+        payload: {
+          credentialId: detail.credentialId,
+          title: detail.title,
+          snippet: detail.snippet,
+          tags: detail.tags
+        }
+      });
+    });
+
     this.detailEl.addEventListener('click', (event: Event) => this.handleExternalLinkClick(event), true);
 
     this.detailEl.addEventListener('key-action-request', (event: Event) => {
@@ -203,6 +232,32 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.modalEl.action = detail.action;
       this.modalEl.existingPartialId = slotState.partialId ?? '';
       this.modalEl.existingCreated = slotState.created ?? '';
+    });
+
+    this.detailEl.addEventListener('fetch-user-tags', () => {
+      this.post({ type: 'webview/fetch-user-tags', payload: {} });
+    });
+
+    this.detailEl.addEventListener('credential-update-request', (event: Event) => {
+      const detail = (event as CustomEvent<{
+        credentialId: string;
+        title: string;
+        snippet: string;
+        tags: string[];
+      }>).detail;
+      if (!detail) {
+        return;
+      }
+
+      this.post({
+        type: 'webview/update-credential-metadata',
+        payload: {
+          credentialId: detail.credentialId,
+          title: detail.title,
+          snippet: detail.snippet,
+          tags: detail.tags
+        }
+      });
     });
 
     this.modalEl.addEventListener('key-action-close', () => {
@@ -237,12 +292,14 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.credentialsEl.selectedCredentialId = null;
     this.credentialsEl.loading = false;
     this.credentialsEl.errorMessage = '';
+    this.credentialsEl.availableTags = [];
     this.credentialsEl.style.display = '';
 
     this.detailEl.credential = null;
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
     this.detailEl.portalBase = '';
+    this.detailEl.availableTags = [];
     this.detailEl.style.display = 'none';
 
     this.modalEl.open = false;
@@ -375,6 +432,22 @@ class ArcgisApiKeysAppElement extends HTMLElement {
             ? 'Regeneration'
             : 'Revocation';
       this.statusEl.textContent = `${actionLabel} complete for slot ${message.payload.result.slot}.`;
+      return;
+    }
+
+    if (message.type === 'host/user-tags') {
+      this.detailEl.availableTags = message.payload.tags;
+      this.credentialsEl.availableTags = message.payload.tags;
+      return;
+    }
+
+    if (message.type === 'host/credential-metadata-updated') {
+      const updated = message.payload.credential;
+      this.selectedCredential = updated;
+      this.detailEl.credential = updated;
+      this.credentials = this.credentials.map((c) => (c.id === updated.id ? updated : c));
+      this.credentialsEl.credentials = this.credentials;
+      this.statusEl.textContent = `Updated ${updated.name}.`;
     }
   }
 
@@ -428,11 +501,13 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.credentialsEl.selectedCredentialId = null;
     this.credentialsEl.loading = false;
     this.credentialsEl.errorMessage = '';
+    this.credentialsEl.availableTags = [];
 
     this.detailEl.credential = null;
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
     this.detailEl.portalBase = '';
+    this.detailEl.availableTags = [];
 
     this.modalEl.open = false;
     this.modalEl.loading = false;

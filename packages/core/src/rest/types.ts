@@ -55,6 +55,20 @@ export interface FetchPortalBaseOptions {
   accessToken: string;
 }
 
+export interface FetchUserTagsOptions {
+  environment: EnvironmentConfig;
+  accessToken: string;
+}
+
+export interface UpdateItemMetadataOptions {
+  environment: EnvironmentConfig;
+  accessToken: string;
+  credentialId: string;
+  title: string;
+  snippet: string;
+  tags: string[];
+}
+
 export interface ArcGisRestClient {
   fetchCredentials(options: FetchCredentialsOptions): Promise<ApiKeyCredential[]>;
   fetchCredentialDetail(options: FetchCredentialDetailOptions): Promise<ApiKeyCredential>;
@@ -64,6 +78,8 @@ export interface ArcGisRestClient {
   revokeApiKey(options: KeyMutationOptions): Promise<KeyMutationResult>;
   detectCapabilities(environment: EnvironmentConfig, accessToken: string): Promise<ArcGisClientCapabilities>;
   getLastResponseValidationWarnings(): string[];
+  fetchUserTags(options: FetchUserTagsOptions): Promise<string[]>;
+  updateItemMetadata(options: UpdateItemMetadataOptions): Promise<void>;
 }
 
 export type RestClientErrorCode =

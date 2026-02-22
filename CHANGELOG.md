@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Core:** `snippet` field on `ApiKeyCredential` model; populated from the `/content/items/{id}/groups` response during `fetchCredentialDetail()`.
+- **Core:** `fetchUserTags()` REST method — fetches the authenticated user's tags from `/community/users/{id}/tags` for tag autocomplete.
+- **Core:** `updateItemMetadata()` REST method — updates item title, snippet, and tags via `/content/users/{owner}/items/{id}/update`.
+- **Core:** Inline editing for title, snippet, and tags in `<credential-detail>` with pencil-button reveal on hover, focus-out auto-save, and tag combobox with type-ahead suggestions from the user's existing tags.
+- **Core:** Inline editing for title, snippet, and tags in `<credential-list>` rows; credential rows converted from `<button>` to `<div role="button">` to allow nested interactive controls.
+- **Core:** `webview/fetch-user-tags` and `webview/update-credential-metadata` webview→host protocol messages; `host/user-tags` and `host/credential-metadata-updated` host→webview messages.
+
+- **VS Code:** `fetchUserTagsForEnvironment()` handler posts available tags to the webview on demand.
+- **VS Code:** `updateCredentialMetadataForEnvironment()` handler — calls `updateItemMetadata()`, re-fetches the updated credential, and posts `host/credential-metadata-updated` back to the webview.
+
+### Changed
+
+- **Core:** `filterCredentials()` search now also matches against partial API key IDs (e.g. `AT1_a1b2c3d4`).
+- **Core:** `<credential-list>` search label updated to "Search" with an info tooltip listing supported fields: Name, Referrer, or Partial API Key.
+
 ### Fixed
 
 - **CI/Tests:** Updated `packages/core` and `packages/vscode` test scripts to run Node test discovery from `dist-test/test` (`cd dist-test/test && node --test`) so GitHub Actions on Node 20 does not treat a quoted glob as a literal path.

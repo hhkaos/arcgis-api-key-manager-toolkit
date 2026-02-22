@@ -8,6 +8,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ## Done
 
+- [x] Add inline editing for title, snippet, and tags in `<credential-detail>` and `<credential-list>` (pencil-button reveal, focus-out auto-save, tag combobox with type-ahead); add `fetchUserTags()` and `updateItemMetadata()` REST methods; extend search to match partial API key IDs - 2026-02-22
 - [x] Fix GitHub Actions test failure on Node 20 by replacing quoted `node --test` glob usage with directory-based discovery in `packages/core` and `packages/vscode` test scripts - 2026-02-22
 - [x] Add GitHub Actions release workflow, `.vscodeignore`, `package` scripts for `.vsix` and Chrome `.zip`; update publisher to `hhkaos` - 2026-02-22
 - [x] Add "Open API Key settings in ArcGIS ↗" link in `<credential-detail>` header; fix `fetchPortalBase()` to use `urlKey`+`customBaseUrl`; fix expiration milliseconds to `:00`; theme-fix `<key-action-modal>` colors with VS Code tokens; add `webview/open-external-url` protocol message with VS Code handler and Chrome propagation - 2026-02-22
