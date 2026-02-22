@@ -16,6 +16,11 @@ export interface CredentialUpdateRequestDetail {
   tags: string[];
 }
 
+export interface CredentialReferrerUpdateRequestDetail {
+  credentialId: string;
+  referrers: string[];
+}
+
 type EditingField = 'title' | 'snippet' | 'tags' | null;
 
 export class CredentialDetailElement extends LitElement {
@@ -31,7 +36,10 @@ export class CredentialDetailElement extends LitElement {
     _editTags: { state: true },
     _tagInput: { state: true },
     _tagDropdownOpen: { state: true },
-    _saving: { state: true }
+    _saving: { state: true },
+    _editingReferrers: { state: true },
+    _editReferrers: { state: true },
+    _savingReferrers: { state: true }
   };
 
   public static override styles = css`
@@ -406,6 +414,70 @@ export class CredentialDetailElement extends LitElement {
     .tag-dropdown-item:focus { background: var(--vscode-list-hoverBackground, rgba(0,0,0,0.05)); outline: none; }
 
     .tag-dropdown-item.add-option { color: var(--akm-primary); border-bottom: 1px solid var(--akm-border); }
+
+    .collapsible-help {
+      border: 1px solid var(--akm-border);
+      padding: 6px 8px;
+      background: var(--akm-surface-raised);
+      font-size: 12px;
+      color: var(--akm-muted);
+    }
+
+    .collapsible-help summary {
+      cursor: pointer;
+      color: var(--akm-text);
+      font-weight: 600;
+      outline: none;
+    }
+
+    .collapsible-help p {
+      margin: 6px 0 0 0;
+      line-height: 1.4;
+    }
+
+    .collapsible-help a {
+      color: var(--akm-primary);
+    }
+
+    .referrer-editor-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .referrer-input-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .referrer-input-row input {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--akm-border);
+      border-radius: 0;
+      padding: 7px 8px;
+      font-size: 12px;
+      color: var(--akm-text);
+      background: var(--akm-surface-raised);
+      font-family: var(--akm-font);
+    }
+
+    .referrer-delete {
+      border-color: var(--vscode-errorForeground, #b42318);
+      background: transparent;
+      color: var(--vscode-errorForeground, #b42318);
+      min-height: 29px;
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    .referrer-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
   `;
 
   public credential: ApiKeyCredential | null = null;
@@ -421,12 +493,26 @@ export class CredentialDetailElement extends LitElement {
   private _tagInput: string = '';
   private _tagDropdownOpen: boolean = false;
   private _saving: boolean = false;
+  private _editingReferrers: boolean = false;
+  private _editReferrers: string[] = [];
+  private _savingReferrers: boolean = false;
   private _cancelRequested: boolean = false;
 
   public override updated(changedProperties: Map<string, unknown>): void {
-    if (changedProperties.has('credential') && this._saving) {
-      this._saving = false;
-      this._editingField = null;
+    if (changedProperties.has('credential')) {
+      if (this._saving) {
+        this._saving = false;
+        this._editingField = null;
+      }
+
+      if (this._savingReferrers) {
+        this._savingReferrers = false;
+        this._editingReferrers = false;
+      }
+    }
+
+    if (changedProperties.has('errorMessage') && this._savingReferrers) {
+      this._savingReferrers = false;
     }
   }
 
@@ -508,19 +594,43 @@ export class CredentialDetailElement extends LitElement {
 
         <div class="section">
           <h3>Referrer Restrictions</h3>
-          ${referrerAnnotations.length === 0
-            ? html`<div class="empty">No referrer restrictions configured.</div>`
-            : referrerAnnotations.map(
-                (a) => html`
-                  <div class="referrer ${a.warning ? 'warn' : ''}">
-                    <div>
-                      <div class="value">${a.value}</div>
-                      <div class="note">${this.getReferrerReason(a.reason)}</div>
-                    </div>
-                    ${a.warning ? html`<span class="warning">⚠ Review</span>` : null}
-                  </div>
-                `
-              )}
+          <details class="collapsible-help">
+            <summary>Instructions</summary>
+            <p>
+              Allow access from specific HTTP/HTTPS domains. The value of the HTTP referrer header must match.
+              You can use * as a wildcard. See
+              <a
+                href="https://developers.arcgis.com/documentation/security-and-authentication/api-key-authentication/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Security and authentication</a>
+              for details. Updating referrers invalidates current keys and requires key regeneration.
+            </p>
+          </details>
+          ${this._editingReferrers
+            ? this.renderReferrerEditor()
+            : html`
+                <div class="referrer-controls">
+                  <button
+                    type="button"
+                    @click=${this.startReferrerEdit}
+                    ?disabled=${this.loading}
+                  >✎ Edit referrers</button>
+                </div>
+                ${referrerAnnotations.length === 0
+                  ? html`<div class="empty">No referrer restrictions configured.</div>`
+                  : referrerAnnotations.map(
+                      (a) => html`
+                        <div class="referrer ${a.warning ? 'warn' : ''}">
+                          <div>
+                            <div class="value">${a.value}</div>
+                            <div class="note">${this.getReferrerReason(a.reason)}</div>
+                          </div>
+                          ${a.warning ? html`<span class="warning">Review</span>` : null}
+                        </div>
+                      `
+                    )}
+              `}
         </div>
 
         <div class="section">
@@ -777,6 +887,111 @@ export class CredentialDetailElement extends LitElement {
       </div>
     `;
   }
+
+  private renderReferrerEditor() {
+    const annotations = analyzeReferrers(this._editReferrers);
+
+    return html`
+      <div class="referrer-editor-list">
+        ${this._editReferrers.map((value, index) => {
+          const annotation = annotations[index];
+          return html`
+            <div>
+              <div class="referrer-input-row">
+                <input
+                  type="text"
+                  .value=${value}
+                  @input=${(event: Event) => {
+                    this.updateReferrer(index, (event.target as HTMLInputElement).value);
+                  }}
+                  placeholder="https://your-app.example.com/"
+                  ?disabled=${this._savingReferrers}
+                  aria-label=${`Referrer ${index + 1}`}
+                />
+                <button
+                  type="button"
+                  class="referrer-delete"
+                  @click=${() => this.removeReferrer(index)}
+                  ?disabled=${this._savingReferrers}
+                >Delete</button>
+              </div>
+              ${annotation
+                ? html`<div class="note">${this.getReferrerReason(annotation.reason)}</div>`
+                : null}
+            </div>
+          `;
+        })}
+      </div>
+      <div class="referrer-controls">
+        <button
+          type="button"
+          @click=${this.addReferrer}
+          ?disabled=${this._savingReferrers}
+        >+ Add</button>
+        <button
+          type="button"
+          class="confirm-save"
+          @click=${this.saveReferrers}
+          ?disabled=${this._savingReferrers}
+        >${this._savingReferrers ? '...' : 'Save referrers'}</button>
+        <button
+          type="button"
+          class="confirm-cancel"
+          @click=${this.cancelReferrerEdit}
+          ?disabled=${this._savingReferrers}
+        >Cancel</button>
+      </div>
+    `;
+  }
+
+  private startReferrerEdit = (): void => {
+    if (!this.credential) return;
+
+    this._editingReferrers = true;
+    this._savingReferrers = false;
+    this._editReferrers = this.credential.referrers.length > 0 ? [...this.credential.referrers] : [''];
+  };
+
+  private cancelReferrerEdit = (): void => {
+    this._editingReferrers = false;
+    this._savingReferrers = false;
+    this._editReferrers = [];
+  };
+
+  private addReferrer = (): void => {
+    this._editReferrers = [...this._editReferrers, ''];
+  };
+
+  private removeReferrer(index: number): void {
+    this._editReferrers = this._editReferrers.filter((_value, valueIndex) => valueIndex !== index);
+    if (this._editReferrers.length === 0) {
+      this._editReferrers = [''];
+    }
+  }
+
+  private updateReferrer(index: number, value: string): void {
+    this._editReferrers = this._editReferrers.map((item, valueIndex) =>
+      valueIndex === index ? value : item
+    );
+  }
+
+  private saveReferrers = (): void => {
+    if (!this.credential || this._savingReferrers) return;
+
+    const normalizedReferrers = [...new Set(this._editReferrers.map((value) => value.trim()).filter(Boolean))];
+    this._savingReferrers = true;
+
+    this.dispatchEvent(
+      new CustomEvent<CredentialReferrerUpdateRequestDetail>('credential-referrers-update-request', {
+        detail: {
+          credentialId: this.credential.id,
+          referrers: normalizedReferrers
+        },
+        bubbles: true,
+        composed: true
+      })
+    );
+  };
 
   private startEdit(field: EditingField): void {
     if (!this.credential || field === null) return;

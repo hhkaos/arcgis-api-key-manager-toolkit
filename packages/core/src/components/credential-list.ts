@@ -64,6 +64,7 @@ export class CredentialListElement extends LitElement {
       --akm-focus: var(--vscode-focusBorder, #8fbef5);
       --akm-hover: var(--vscode-list-hoverBackground, #f1f6fb);
       --akm-selected: var(--vscode-list-activeSelectionBackground, #dceeff);
+      --akm-credential-columns: minmax(220px, 2.8fr) minmax(220px, 1.6fr) minmax(120px, 0.9fr) 40px;
       font-family: var(--akm-font);
       color: var(--akm-text);
     }
@@ -194,11 +195,12 @@ export class CredentialListElement extends LitElement {
     .header-row {
       display: grid;
       gap: 8px;
-      grid-template-columns: minmax(160px, 2fr) minmax(180px, 2fr) 100px 28px;
+      grid-template-columns: var(--akm-credential-columns);
       align-items: center;
       padding: 5px 10px;
       background: var(--akm-surface);
       border-bottom: 1px solid var(--akm-border);
+      box-sizing: border-box;
     }
 
     .col-heading {
@@ -212,14 +214,14 @@ export class CredentialListElement extends LitElement {
     .row {
       display: grid;
       gap: 8px;
-      grid-template-columns: minmax(160px, 2fr) minmax(180px, 2fr) 100px 28px;
+      grid-template-columns: var(--akm-credential-columns);
       align-items: center;
       padding: 8px 10px;
       border-top: 1px solid var(--akm-border);
       background: var(--akm-surface-raised);
       text-align: left;
-      width: 100%;
       cursor: pointer;
+      box-sizing: border-box;
     }
 
     .row:hover {
@@ -312,6 +314,23 @@ export class CredentialListElement extends LitElement {
 
     .settings-link:hover {
       color: var(--akm-primary);
+    }
+
+    .keys-col {
+      justify-self: start;
+      min-width: 0;
+    }
+
+    .details-col,
+    .details-cell {
+      justify-self: center;
+      text-align: center;
+    }
+
+    .item-col,
+    .item-cell {
+      justify-self: center;
+      text-align: center;
     }
 
     /* Inline edit styles */
@@ -571,9 +590,9 @@ export class CredentialListElement extends LitElement {
               : html`
                   <div class="header-row">
                     <span class="col-heading">Credential</span>
-                    <span class="col-heading">Keys</span>
-                    <span class="col-heading">Details</span>
-                    <span class="col-heading">Item</span>
+                    <span class="col-heading keys-col">Keys</span>
+                    <span class="col-heading details-col">Details</span>
+                    <span class="col-heading item-col">Item</span>
                   </div>
                   ${filteredCredentials.map((credential) => this.renderRow(credential))}
                 `
@@ -600,7 +619,7 @@ export class CredentialListElement extends LitElement {
           ${this.renderSnippetField(credential, es)}
           ${this.renderTagsField(credential, es)}
         </div>
-        <div class="expiration-slots">
+        <div class="expiration-slots keys-col">
           ${
             credential.isLegacy
               ? html`<expiration-badge .expiration=${credential.expiration} .nonExpiring=${true}></expiration-badge>`
@@ -614,11 +633,11 @@ export class CredentialListElement extends LitElement {
                 `
           }
         </div>
-        <div>
+        <div class="details-cell">
           <div class="subtle">${credential.privileges.length} privileges</div>
           <div class="subtle">${credential.referrers.length} referrers</div>
         </div>
-        <div>
+        <div class="item-cell">
           ${this.portalBase
             ? html`<a
                 class="settings-link"

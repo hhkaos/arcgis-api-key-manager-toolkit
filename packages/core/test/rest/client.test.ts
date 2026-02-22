@@ -650,6 +650,58 @@ test('online key mutation does not fall back to /portals/self key mutation endpo
   assert.equal(transport.calls[1]?.path, '/content/users/hhkaos2/items/item-id/registeredAppInfo');
 });
 
+test('updateCredentialReferrers posts oauth app update payload with encoded arrays', async () => {
+  const transport = new MockTransport([
+    { owner: 'hhkaos2' },
+    {
+      client_id: 'app-client',
+      redirect_uris: ['urn:ietf:wg:oauth:2.0:oob'],
+      privileges: ['premium:user:basemaps']
+    },
+    { success: true }
+  ]);
+
+  const client = new ArcGisRestClientImpl(transport);
+  await client.updateCredentialReferrers({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id',
+    referrers: ['https://cdpn.io/', 'http://localhost:5173/']
+  });
+
+  assert.equal(transport.calls[0]?.path, '/content/items/item-id');
+  assert.equal(transport.calls[1]?.path, '/content/users/hhkaos2/items/item-id/registeredAppInfo');
+  assert.equal(transport.calls[2]?.path, '/oauth2/apps/app-client/update');
+  assert.equal(transport.calls[2]?.method, 'POST');
+  assert.equal(transport.calls[2]?.body?.client_id, 'app-client');
+  assert.equal(transport.calls[2]?.body?.redirect_uris, '["urn:ietf:wg:oauth:2.0:oob"]');
+  assert.equal(
+    transport.calls[2]?.body?.httpReferrers,
+    '["https://cdpn.io/","http://localhost:5173/"]'
+  );
+  assert.equal(transport.calls[2]?.body?.privileges, '["premium:user:basemaps"]');
+});
+
+test('updateCredentialReferrers falls back to default redirect URI and trims duplicates', async () => {
+  const transport = new MockTransport([
+    { owner: 'hhkaos2' },
+    { client_id: 'app-client', privileges: [] },
+    { success: true }
+  ]);
+
+  const client = new ArcGisRestClientImpl(transport);
+  await client.updateCredentialReferrers({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id',
+    referrers: ['https://cdpn.io/', ' https://cdpn.io/ ', '']
+  });
+
+  assert.equal(transport.calls[2]?.body?.redirect_uris, '["urn:ietf:wg:oauth:2.0:oob"]');
+  assert.equal(transport.calls[2]?.body?.httpReferrers, '["https://cdpn.io/"]');
+  assert.equal(transport.calls[2]?.body?.privileges, '[]');
+});
+
 test('enterprise key mutation uses documented token flow endpoints', async () => {
   const transport = new MockTransport([
     { owner: 'ent-user' },

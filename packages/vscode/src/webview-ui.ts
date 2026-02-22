@@ -260,6 +260,24 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       });
     });
 
+    this.detailEl.addEventListener('credential-referrers-update-request', (event: Event) => {
+      const detail = (event as CustomEvent<{
+        credentialId: string;
+        referrers: string[];
+      }>).detail;
+      if (!detail) {
+        return;
+      }
+
+      this.post({
+        type: 'webview/update-credential-referrers',
+        payload: {
+          credentialId: detail.credentialId,
+          referrers: detail.referrers
+        }
+      });
+    });
+
     this.modalEl.addEventListener('key-action-close', () => {
       this.modalEl.open = false;
     });

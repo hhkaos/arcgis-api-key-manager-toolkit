@@ -11,6 +11,7 @@ import type {
   KeyMutationAction,
   KeyMutationOptions,
   KeyMutationResult,
+  UpdateCredentialReferrersOptions,
   UpdateItemMetadataOptions
 } from './types.js';
 
@@ -39,6 +40,10 @@ interface RegisteredAppInfoResponse {
   clientId?: string;
   client_secret?: string;
   clientSecret?: string;
+  redirect_uris?: unknown;
+  redirectUris?: unknown;
+  privileges?: unknown;
+  scopes?: unknown;
 }
 
 interface ItemOwnerResponse {
@@ -392,6 +397,83 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
           error: {
             code: 500,
             message: 'ArcGIS did not confirm the item metadata update.'
+          }
+        };
+      }
+    } catch (error) {
+      throw mapRestError(error);
+    }
+  }
+
+  public async updateCredentialReferrers(options: UpdateCredentialReferrersOptions): Promise<void> {
+    try {
+      const item = await this.transport.request<ItemOwnerResponse>({
+        path: `/content/items/${encodeURIComponent(options.credentialId)}`,
+        method: 'GET',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        query: { f: 'json' }
+      });
+
+      const owner = readLooseString(item.owner);
+      if (!owner) {
+        throw {
+          error: {
+            code: 500,
+            message: 'ArcGIS item response did not include an owner for this credential.'
+          }
+        };
+      }
+
+      const registered = await this.transport.request<RegisteredAppInfoResponse>({
+        path: `/content/users/${encodeURIComponent(owner)}/items/${encodeURIComponent(
+          options.credentialId
+        )}/registeredAppInfo`,
+        method: 'GET',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        query: { f: 'json' }
+      });
+
+      const clientId = readLooseString(registered.client_id) ?? readLooseString(registered.clientId);
+      if (!clientId) {
+        throw {
+          error: {
+            code: 500,
+            message: 'ArcGIS registered app info did not include a client ID.'
+          }
+        };
+      }
+
+      const redirectUris =
+        toStringArrayOrJsonString(registered.redirect_uris) ??
+        toStringArrayOrJsonString(registered.redirectUris) ??
+        ['urn:ietf:wg:oauth:2.0:oob'];
+      const privileges =
+        toStringArrayOrJsonString(registered.privileges) ??
+        toStringArrayOrJsonString(registered.scopes) ??
+        [];
+      const referrers = [...new Set(options.referrers.map((value) => value.trim()).filter((value) => value.length > 0))];
+
+      const response = await this.transport.request<{ success?: boolean }>({
+        path: `/oauth2/apps/${encodeURIComponent(clientId)}/update`,
+        method: 'POST',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        body: {
+          f: 'json',
+          client_id: clientId,
+          redirect_uris: JSON.stringify(redirectUris),
+          httpReferrers: JSON.stringify(referrers),
+          privileges: JSON.stringify(privileges)
+        }
+      });
+
+      if (response.success === false) {
+        throw {
+          error: {
+            code: 500,
+            message: 'ArcGIS did not confirm the referrer update.'
           }
         };
       }
@@ -1202,6 +1284,29 @@ function toStringArray(value: unknown): string[] | undefined {
     .filter((item): item is string => typeof item === 'string')
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
+}
+
+function toStringArrayOrJsonString(value: unknown): string[] | undefined {
+  const direct = toStringArray(value);
+  if (direct) {
+    return direct;
+  }
+
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    return toStringArray(parsed);
+  } catch {
+    return undefined;
+  }
 }
 
 function hasUsableExpiration(value: unknown): boolean | undefined {

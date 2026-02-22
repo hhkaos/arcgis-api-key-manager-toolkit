@@ -45,6 +45,11 @@ export interface CredentialMetadataUpdateRequest {
   tags: string[];
 }
 
+export interface CredentialReferrersUpdateRequest {
+  credentialId: string;
+  referrers: string[];
+}
+
 export type HostToWebviewMessage =
   | ProtocolEnvelope<'host/state', HostStatePayload>
   | ProtocolEnvelope<'host/credentials', { credentials: ApiKeyCredential[]; portalBase?: string }>
@@ -65,7 +70,8 @@ export type WebviewToHostMessage =
   | ProtocolEnvelope<'webview/open-external-url', { url: string }>
   | ProtocolEnvelope<'webview/ack-error', { code?: string }>
   | ProtocolEnvelope<'webview/fetch-user-tags', Record<string, never>>
-  | ProtocolEnvelope<'webview/update-credential-metadata', CredentialMetadataUpdateRequest>;
+  | ProtocolEnvelope<'webview/update-credential-metadata', CredentialMetadataUpdateRequest>
+  | ProtocolEnvelope<'webview/update-credential-referrers', CredentialReferrersUpdateRequest>;
 
 export type WebviewProtocolMessage = HostToWebviewMessage | WebviewToHostMessage;
 
@@ -122,7 +128,8 @@ function isProtocolMessage(value: unknown): value is WebviewProtocolMessage {
     'webview/open-external-url',
     'webview/ack-error',
     'webview/fetch-user-tags',
-    'webview/update-credential-metadata'
+    'webview/update-credential-metadata',
+    'webview/update-credential-referrers'
   ]);
 
   return allowedTypes.has(value.type);

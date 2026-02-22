@@ -69,6 +69,13 @@ export interface UpdateItemMetadataOptions {
   tags: string[];
 }
 
+export interface UpdateCredentialReferrersOptions {
+  environment: EnvironmentConfig;
+  accessToken: string;
+  credentialId: string;
+  referrers: string[];
+}
+
 export interface ArcGisRestClient {
   fetchCredentials(options: FetchCredentialsOptions): Promise<ApiKeyCredential[]>;
   fetchCredentialDetail(options: FetchCredentialDetailOptions): Promise<ApiKeyCredential>;
@@ -80,6 +87,7 @@ export interface ArcGisRestClient {
   getLastResponseValidationWarnings(): string[];
   fetchUserTags(options: FetchUserTagsOptions): Promise<string[]>;
   updateItemMetadata(options: UpdateItemMetadataOptions): Promise<void>;
+  updateCredentialReferrers(options: UpdateCredentialReferrersOptions): Promise<void>;
 }
 
 export type RestClientErrorCode =

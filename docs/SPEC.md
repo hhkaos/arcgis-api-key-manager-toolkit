@@ -19,7 +19,7 @@ Provide a secure developer tool that allows an authenticated ArcGIS user to:
 - Sign in via OAuth 2.0 (Authorization Code + PKCE)
 - List their own API Key Credentials
 - Explore metadata (name, snippet, tags, expiration, privileges, referrer restrictions)
-- Edit credential metadata (name, snippet, tags) inline without leaving the extension
+- Edit credential metadata (name, snippet, tags, referrer restrictions) inline without leaving the extension
 - See whether API Key 1 and/or API Key 2 exist
 - Create, regenerate, or revoke API Key 1 or API Key 2
 - Copy newly generated keys (shown once only)
@@ -220,6 +220,7 @@ Display:
 - **Annotated referrer restrictions** — display URL patterns with visual annotations:
   - Warn on wildcard-only patterns (e.g., `*`)
   - Highlight unusual or overly permissive entries
+  - Inline editor (add/edit/delete) with per-row validation; save posts `webview/update-credential-referrers` and invalidates the current credential keys (users are advised to regenerate keys after changing referrers)
 - Expiration configuration with color-coded badge
 - API Key 1 status
 - API Key 2 status

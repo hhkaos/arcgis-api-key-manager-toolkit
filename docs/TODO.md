@@ -8,6 +8,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ## Done
 
+- [x] Add inline referrer restrictions editor in `<credential-detail>` (add/edit/delete form, collapsible instructions, `credential-referrers-update-request` event); add `updateCredentialReferrers()` REST method via `/oauth2/apps/{clientId}/update`; wire Chrome explorer and service worker for all inline-editing messages - 2026-02-22
 - [x] Add inline editing for title, snippet, and tags in `<credential-detail>` and `<credential-list>` (pencil-button reveal, focus-out auto-save, tag combobox with type-ahead); add `fetchUserTags()` and `updateItemMetadata()` REST methods; extend search to match partial API key IDs - 2026-02-22
 - [x] Fix GitHub Actions test failure on Node 20 by replacing quoted `node --test` glob usage with directory-based discovery in `packages/core` and `packages/vscode` test scripts - 2026-02-22
 - [x] Add GitHub Actions release workflow, `.vscodeignore`, `package` scripts for `.vsix` and Chrome `.zip`; update publisher to `hhkaos` - 2026-02-22

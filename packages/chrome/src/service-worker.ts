@@ -222,6 +222,64 @@ async function handleWebviewMessage(
         return toHostErrorPayload(error);
       }
     }
+    case 'webview/fetch-user-tags': {
+      if (!environment) {
+        return toHostError('No environment configured. Add one in the popup.', true);
+      }
+
+      const accessToken = await getValidAccessToken(services, environment);
+      if (!accessToken) {
+        return toHostError('Session expired. Sign in again to continue.', true, 'SESSION_EXPIRED');
+      }
+
+      try {
+        const tags = await services.restClient.fetchUserTags({
+          environment,
+          accessToken
+        });
+
+        return {
+          type: 'host/user-tags',
+          payload: { tags }
+        };
+      } catch (error) {
+        return toHostErrorPayload(error);
+      }
+    }
+    case 'webview/update-credential-metadata': {
+      if (!environment) {
+        return toHostError('No environment configured. Add one in the popup.', true);
+      }
+
+      const accessToken = await getValidAccessToken(services, environment);
+      if (!accessToken) {
+        return toHostError('Session expired. Sign in again to continue.', true, 'SESSION_EXPIRED');
+      }
+
+      try {
+        await services.restClient.updateItemMetadata({
+          environment,
+          accessToken,
+          credentialId: message.payload.credentialId,
+          title: message.payload.title,
+          snippet: message.payload.snippet,
+          tags: message.payload.tags
+        });
+
+        const credential = await services.restClient.fetchCredentialDetail({
+          environment,
+          accessToken,
+          credentialId: message.payload.credentialId
+        });
+
+        return {
+          type: 'host/credential-metadata-updated',
+          payload: { credential }
+        };
+      } catch (error) {
+        return toHostErrorPayload(error);
+      }
+    }
     case 'webview/key-action': {
       if (!environment) {
         return toHostError('No environment configured. Add one in the popup.', true);
@@ -260,6 +318,38 @@ async function handleWebviewMessage(
         return {
           type: 'host/key-action-result',
           payload: { result }
+        };
+      } catch (error) {
+        return toHostErrorPayload(error);
+      }
+    }
+    case 'webview/update-credential-referrers': {
+      if (!environment) {
+        return toHostError('No environment configured. Add one in the popup.', true);
+      }
+
+      const accessToken = await getValidAccessToken(services, environment);
+      if (!accessToken) {
+        return toHostError('Session expired. Sign in again to continue.', true, 'SESSION_EXPIRED');
+      }
+
+      try {
+        await services.restClient.updateCredentialReferrers({
+          environment,
+          accessToken,
+          credentialId: message.payload.credentialId,
+          referrers: message.payload.referrers
+        });
+
+        const credential = await services.restClient.fetchCredentialDetail({
+          environment,
+          accessToken,
+          credentialId: message.payload.credentialId
+        });
+
+        return {
+          type: 'host/credential-metadata-updated',
+          payload: { credential }
         };
       } catch (error) {
         return toHostErrorPayload(error);

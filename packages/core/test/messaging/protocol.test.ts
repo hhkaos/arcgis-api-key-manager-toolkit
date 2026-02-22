@@ -61,6 +61,20 @@ test('serializeMessage + deserializeMessage supports open external URL payloads'
   assert.deepEqual(roundTrip, message);
 });
 
+test('serializeMessage + deserializeMessage supports referrer update payloads', () => {
+  const message: WebviewProtocolMessage = {
+    type: 'webview/update-credential-referrers',
+    requestId: 'req-referrer-update',
+    payload: {
+      credentialId: 'item-id',
+      referrers: ['https://cdpn.io/', 'http://localhost:5173/']
+    }
+  };
+
+  const roundTrip = deserializeMessage(serializeMessage(message));
+  assert.deepEqual(roundTrip, message);
+});
+
 test('deserializeMessage rejects invalid messages', () => {
   assert.throws(() => deserializeMessage('{"type":"unknown","payload":{}}'));
   assert.throws(() => deserializeMessage('{"type":"webview/sign-in","payload":"bad"}'));

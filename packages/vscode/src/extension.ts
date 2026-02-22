@@ -363,6 +363,9 @@ async function handleWebviewMessage(
     case 'webview/update-credential-metadata':
       await updateCredentialMetadataForEnvironment(services, environment, panel, message.payload);
       break;
+    case 'webview/update-credential-referrers':
+      await updateCredentialReferrersForEnvironment(services, environment, panel, message.payload);
+      break;
     case 'webview/open-external-url':
       await openExternalUrlForPanel(services, panel, message.payload.url);
       break;
@@ -413,6 +416,51 @@ async function updateCredentialMetadataForEnvironment(
       title: payload.title,
       snippet: payload.snippet,
       tags: payload.tags
+    });
+
+    const credential = await services.restClient.fetchCredentialDetail({
+      environment,
+      accessToken: token,
+      credentialId: payload.credentialId
+    });
+
+    services.webviewPanels.post(panel, {
+      type: 'host/credential-metadata-updated',
+      payload: { credential }
+    });
+  } catch (error) {
+    const mapped = normalizeRestError(error);
+    services.webviewPanels.post(panel, {
+      type: 'host/error',
+      payload: {
+        message: mapped.message,
+        code: mapped.code,
+        recoverable: mapped.recoverable
+      }
+    });
+  }
+}
+
+async function updateCredentialReferrersForEnvironment(
+  services: ExtensionServices,
+  environment: EnvironmentConfig,
+  panel: vscode.WebviewPanel,
+  payload: {
+    credentialId: string;
+    referrers: string[];
+  }
+): Promise<void> {
+  const token = await getValidAccessToken(services, environment, panel);
+  if (!token) {
+    return;
+  }
+
+  try {
+    await services.restClient.updateCredentialReferrers({
+      environment,
+      accessToken: token,
+      credentialId: payload.credentialId,
+      referrers: payload.referrers
     });
 
     const credential = await services.restClient.fetchCredentialDetail({

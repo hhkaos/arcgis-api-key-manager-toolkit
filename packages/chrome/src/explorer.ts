@@ -15,6 +15,7 @@ interface CredentialListElement extends HTMLElement {
   loading: boolean;
   errorMessage: string;
   portalBase: string;
+  availableTags: string[];
 }
 
 interface CredentialDetailElement extends HTMLElement {
@@ -22,6 +23,7 @@ interface CredentialDetailElement extends HTMLElement {
   loading: boolean;
   errorMessage: string;
   portalBase: string;
+  availableTags: string[];
 }
 
 interface KeyActionModalElement extends HTMLElement {
@@ -180,6 +182,32 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       });
     });
 
+    this.credentialsEl.addEventListener('fetch-user-tags', () => {
+      void this.requestAndHandle({ type: 'webview/fetch-user-tags', payload: {} });
+    });
+
+    this.credentialsEl.addEventListener('credential-update-request', (event: Event) => {
+      const detail = (event as CustomEvent<{
+        credentialId: string;
+        title: string;
+        snippet: string;
+        tags: string[];
+      }>).detail;
+      if (!detail) {
+        return;
+      }
+
+      void this.requestAndHandle({
+        type: 'webview/update-credential-metadata',
+        payload: {
+          credentialId: detail.credentialId,
+          title: detail.title,
+          snippet: detail.snippet,
+          tags: detail.tags
+        }
+      });
+    });
+
     this.detailEl.addEventListener('key-action-request', (event: Event) => {
       const detail = (event as CustomEvent<{
         credentialId: string;
@@ -202,6 +230,50 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.modalEl.action = detail.action;
       this.modalEl.existingPartialId = slotState.partialId ?? '';
       this.modalEl.existingCreated = slotState.created ?? '';
+    });
+
+    this.detailEl.addEventListener('fetch-user-tags', () => {
+      void this.requestAndHandle({ type: 'webview/fetch-user-tags', payload: {} });
+    });
+
+    this.detailEl.addEventListener('credential-update-request', (event: Event) => {
+      const detail = (event as CustomEvent<{
+        credentialId: string;
+        title: string;
+        snippet: string;
+        tags: string[];
+      }>).detail;
+      if (!detail) {
+        return;
+      }
+
+      void this.requestAndHandle({
+        type: 'webview/update-credential-metadata',
+        payload: {
+          credentialId: detail.credentialId,
+          title: detail.title,
+          snippet: detail.snippet,
+          tags: detail.tags
+        }
+      });
+    });
+
+    this.detailEl.addEventListener('credential-referrers-update-request', (event: Event) => {
+      const detail = (event as CustomEvent<{
+        credentialId: string;
+        referrers: string[];
+      }>).detail;
+      if (!detail) {
+        return;
+      }
+
+      void this.requestAndHandle({
+        type: 'webview/update-credential-referrers',
+        payload: {
+          credentialId: detail.credentialId,
+          referrers: detail.referrers
+        }
+      });
     });
 
     this.modalEl.addEventListener('key-action-close', () => {
@@ -236,12 +308,14 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.credentialsEl.selectedCredentialId = null;
     this.credentialsEl.loading = false;
     this.credentialsEl.errorMessage = '';
+    this.credentialsEl.availableTags = [];
     this.credentialsEl.style.display = '';
 
     this.detailEl.credential = null;
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
     this.detailEl.portalBase = '';
+    this.detailEl.availableTags = [];
     this.detailEl.style.display = 'none';
 
     this.modalEl.open = false;
@@ -380,6 +454,25 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       return;
     }
 
+    if (message.type === 'host/credential-metadata-updated') {
+      const updated = message.payload.credential;
+      this.selectedCredential = updated;
+      this.detailEl.credential = updated;
+      this.credentials = this.credentials.map((credential) =>
+        credential.id === updated.id ? updated : credential
+      );
+      this.credentialsEl.credentials = this.credentials;
+      this.statusEl.textContent = `Updated ${updated.name}.`;
+      this.syncUiState();
+      return;
+    }
+
+    if (message.type === 'host/user-tags') {
+      this.detailEl.availableTags = message.payload.tags;
+      this.credentialsEl.availableTags = message.payload.tags;
+      return;
+    }
+
     if (message.type === 'host/key-action-result') {
       this.modalEl.loading = false;
       this.modalEl.errorMessage = '';
@@ -477,11 +570,13 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.credentialsEl.selectedCredentialId = null;
     this.credentialsEl.loading = false;
     this.credentialsEl.errorMessage = '';
+    this.credentialsEl.availableTags = [];
 
     this.detailEl.credential = null;
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
     this.detailEl.portalBase = '';
+    this.detailEl.availableTags = [];
 
     this.modalEl.open = false;
     this.modalEl.loading = false;
