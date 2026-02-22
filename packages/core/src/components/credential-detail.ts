@@ -13,7 +13,8 @@ export class CredentialDetailElement extends LitElement {
   public static override properties = {
     credential: { attribute: false },
     loading: { type: Boolean },
-    errorMessage: { type: String, attribute: 'error-message' }
+    errorMessage: { type: String, attribute: 'error-message' },
+    portalBase: { type: String, attribute: 'portal-base' }
   };
 
   public static override styles = css`
@@ -45,6 +46,40 @@ export class CredentialDetailElement extends LitElement {
       margin: 0;
       font-size: 17px;
       color: var(--akm-text);
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .settings-link {
+      border: 1px solid var(--akm-primary);
+      border-radius: 0;
+      background: var(--akm-primary);
+      color: var(--akm-primary-foreground);
+      font-weight: 600;
+      font-family: var(--akm-font);
+      padding: 7px 9px;
+      cursor: pointer;
+      min-height: 33px;
+      font-size: 12px;
+      line-height: 1.2;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .settings-link:focus {
+      outline: 2px solid var(--akm-focus);
+      outline-offset: 1px;
+    }
+
+    .settings-link:hover {
+      filter: brightness(0.95);
     }
 
     h3 {
@@ -196,6 +231,7 @@ export class CredentialDetailElement extends LitElement {
   public credential: ApiKeyCredential | null = null;
   public loading: boolean = false;
   public errorMessage: string = '';
+  public portalBase: string = '';
 
   public override render() {
     if (this.loading) {
@@ -211,10 +247,26 @@ export class CredentialDetailElement extends LitElement {
     }
 
     const referrerAnnotations = analyzeReferrers(this.credential.referrers);
+    const settingsHref = this.portalBase
+      ? `${this.portalBase}/home/item.html?id=${this.credential.id}#settings`
+      : '';
 
     return html`
       <section class="panel">
-        <h2>${this.credential.name}</h2>
+        <div class="header-row">
+          <h2>${this.credential.name}</h2>
+          ${settingsHref
+            ? html`<a
+                class="settings-link"
+                href="${settingsHref}"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open API Key settings in ArcGIS"
+              >
+                Open API Key settings in ArcGIS ↗
+              </a>`
+            : null}
+        </div>
 
         <div class="section">
           <h3>Metadata</h3>

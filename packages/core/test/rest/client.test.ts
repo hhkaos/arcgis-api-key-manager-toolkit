@@ -42,6 +42,44 @@ const enterpriseEnvironment: EnvironmentConfig = {
   portalUrl: 'https://gis.example.com/portal'
 };
 
+test('fetchPortalBase uses urlKey and customBaseUrl for online environments', async () => {
+  const transport = new MockTransport([{ urlKey: 'acme', customBaseUrl: 'mapsdevext.arcgis.com' }]);
+  const client = new ArcGisRestClientImpl(transport);
+
+  const portalBase = await client.fetchPortalBase({
+    environment: onlineEnvironment,
+    accessToken: 'token'
+  });
+
+  assert.equal(transport.calls[0]?.path, '/portals/self');
+  assert.equal(portalBase, 'https://acme.mapsdevext.arcgis.com');
+});
+
+test('fetchPortalBase falls back to maps.arcgis.com when customBaseUrl is missing', async () => {
+  const transport = new MockTransport([{ urlKey: 'acme' }]);
+  const client = new ArcGisRestClientImpl(transport);
+
+  const portalBase = await client.fetchPortalBase({
+    environment: onlineEnvironment,
+    accessToken: 'token'
+  });
+
+  assert.equal(portalBase, 'https://acme.maps.arcgis.com');
+});
+
+test('fetchPortalBase uses portalUrl for enterprise environments', async () => {
+  const transport = new MockTransport([]);
+  const client = new ArcGisRestClientImpl(transport);
+
+  const portalBase = await client.fetchPortalBase({
+    environment: enterpriseEnvironment,
+    accessToken: 'token'
+  });
+
+  assert.equal(portalBase, 'https://gis.example.com/portal');
+  assert.equal(transport.calls.length, 0);
+});
+
 test('fetchCredentials handles silent pagination', async () => {
   const transport = new MockTransport([
     {
@@ -478,6 +516,7 @@ test('createApiKey for online uses update + oauth2 token flow for the requested 
 
   assert.equal(typeof transport.calls[2]?.body?.apiToken1ExpirationDate, 'number');
   assert.equal(transport.calls[2]?.body?.apiToken2ExpirationDate, undefined);
+  assert.equal((transport.calls[2]?.body?.apiToken1ExpirationDate as number) % 1000, 0);
   assert.equal(transport.calls[3]?.body?.apiToken, 1);
   assert.equal(transport.calls[3]?.body?.regenerateApiToken, false);
   assert.equal(transport.calls[3]?.body?.client_id, 'app-client');
@@ -509,6 +548,7 @@ test('regenerateApiKey for online sets slot-specific expiration and uses regener
   assert.equal(transport.calls[3]?.path, '/oauth2/token');
   assert.equal(transport.calls[2]?.body?.apiToken1ExpirationDate, undefined);
   assert.equal(typeof transport.calls[2]?.body?.apiToken2ExpirationDate, 'number');
+  assert.equal((transport.calls[2]?.body?.apiToken2ExpirationDate as number) % 1000, 0);
   assert.equal(transport.calls[3]?.body?.apiToken, 2);
   assert.equal(transport.calls[3]?.body?.regenerateApiToken, true);
 });

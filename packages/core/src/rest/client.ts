@@ -52,6 +52,8 @@ interface CommunitySelfResponse {
 
 interface PortalSelfResponse {
   id?: string;
+  urlKey?: string;
+  customBaseUrl?: string;
   user?: {
     username?: string;
   };
@@ -219,9 +221,14 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
         query: { f: 'json' }
       });
 
-      const orgId = readLooseString(portal.id);
-      if (orgId) {
-        return `https://${orgId}.arcgis.com`;
+      const urlKey = readLooseString(portal.urlKey);
+      const customBaseUrl = readLooseString(portal.customBaseUrl);
+      if (urlKey && customBaseUrl) {
+        return `https://${urlKey}.${customBaseUrl}`;
+      }
+
+      if (urlKey) {
+        return `https://${urlKey}.maps.arcgis.com`;
       }
     } catch {
       // Fall through to default.
@@ -1119,7 +1126,7 @@ function toApiTokenExpirationDate(expirationDays: number | undefined): Date | un
 
   const expiration = new Date();
   expiration.setDate(expiration.getDate() + expirationDays);
-  expiration.setHours(23, 59, 59, 999);
+  expiration.setHours(23, 59, 59, 0);
   return expiration;
 }
 

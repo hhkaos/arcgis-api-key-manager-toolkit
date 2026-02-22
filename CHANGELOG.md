@@ -31,10 +31,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Core:** Per-slot expiration badges (K1, K2) in `<credential-list>` rows; column header row added above credential entries.
 - **Core:** Settings deep-link (↗) per credential row in `<credential-list>` that opens the ArcGIS item settings page in a new tab (requires `portalBase`).
 - **Core:** `portalBase` property on `<credential-list>`; `portalBase` field added to `host/credentials` messaging protocol payload.
+- **Core:** `portalBase` property on `<credential-detail>`; "Open API Key settings in ArcGIS ↗" button in the detail panel header when `portalBase` is available.
+- **Core:** `webview/open-external-url` message type added to WebView → Host protocol; unit test confirms round-trip serialization.
 
 - **VS Code:** `executeKeyActionForEnvironment` now handles the `revoke` action and dispatches to `revokeApiKey`.
 - **VS Code:** Resolves and forwards `portalBase` in the credentials payload so list rows display settings links.
 - **VS Code:** Replaced generic placeholder icon with Esri-branded API keys SVG.
+- **VS Code:** `webview/open-external-url` messages handled by extension host via `vscode.env.openExternal` with URL scheme validation (http/https only).
 
 - **Chrome:** Explorer and service worker now handle the `revoke` action and dispatch to `revokeApiKey`.
 - **Chrome:** Service worker resolves and passes `portalBase` in `host/credentials` payload.
@@ -59,8 +62,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **VS Code:** Credential list visibility fixed: uses `style.display` instead of the `hidden` attribute so it reliably hides inside custom elements regardless of shadow DOM CSS.
 - **VS Code:** Error messages no longer include the raw error code suffix.
 - **VS Code:** `webview-ui.ts` passes `portalBase` to `<credential-list>` element.
+- **VS Code:** `portalBase` now forwarded to `<credential-detail>` as well; anchor clicks inside the webview are intercepted and posted as `webview/open-external-url` messages rather than navigating inline.
 
 - **Chrome:** `copyLastKeyButton` removed from explorer page (copy functionality is handled within `<key-action-modal>`).
+- **Chrome:** `portalBase` now forwarded to `<credential-detail>` in addition to `<credential-list>`.
 
 - Refreshed explorer UI to a compact, square-corner, Material-inspired visual style across shared components and VS Code webview shell.
 - Updated webview and component theming to use VS Code theme tokens (`--vscode-*`) with cross-host fallbacks so UI automatically matches active VS Code theme/profile.
@@ -82,6 +87,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Core:** Slot card partial IDs now always derive from the registered app `client_id` using the pattern `AT{slot}_{last 8 chars}` instead of absent API fields, so they display correctly instead of showing N/A.
 - **Core:** Fixed `computePartialId` reading `client_id` from the top-level merged record rather than the `pickSourceRecord`-narrowed source, which could strip the field when a legacy credential wrapper was present.
 - **Core:** Removed "Created: N/A" row from slot cards — creation date is not available from the API.
+- **Core:** `fetchPortalBase()` now derives the org portal URL from `urlKey` + `customBaseUrl` in `/portals/self` instead of the org `id`; falls back to `https://{urlKey}.maps.arcgis.com` when `customBaseUrl` is absent.
+- **Core:** `<key-action-modal>` warning box, result panel, toast, and destructive button colors replaced with VS Code theme tokens (`--vscode-editorWarning-foreground`, `--vscode-errorForeground`, `--akm-surface-raised`); ⚠ prefix on warning text; ✓ prefix on "Copied!" confirmation.
+- **Core:** API key expiration timestamp milliseconds set to `0` (was `999`) to avoid off-by-one second issues in timestamp comparisons.
 
 ---
 

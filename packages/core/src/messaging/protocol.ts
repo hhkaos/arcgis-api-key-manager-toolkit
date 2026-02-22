@@ -53,6 +53,7 @@ export type WebviewToHostMessage =
   | ProtocolEnvelope<'webview/load-credentials', CredentialsQuery>
   | ProtocolEnvelope<'webview/load-credential-detail', { credentialId: string }>
   | ProtocolEnvelope<'webview/key-action', CredentialKeyActionRequest>
+  | ProtocolEnvelope<'webview/open-external-url', { url: string }>
   | ProtocolEnvelope<'webview/ack-error', { code?: string }>;
 
 export type WebviewProtocolMessage = HostToWebviewMessage | WebviewToHostMessage;
@@ -105,6 +106,7 @@ function isProtocolMessage(value: unknown): value is WebviewProtocolMessage {
     'webview/load-credentials',
     'webview/load-credential-detail',
     'webview/key-action',
+    'webview/open-external-url',
     'webview/ack-error'
   ]);
 

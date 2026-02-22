@@ -21,6 +21,7 @@ interface CredentialDetailElement extends HTMLElement {
   credential: ApiKeyCredential | null;
   loading: boolean;
   errorMessage: string;
+  portalBase: string;
 }
 
 interface KeyActionModalElement extends HTMLElement {
@@ -240,6 +241,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.detailEl.credential = null;
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
+    this.detailEl.portalBase = '';
     this.detailEl.style.display = 'none';
 
     this.modalEl.open = false;
@@ -340,6 +342,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.credentialsEl.errorMessage = '';
       this.credentialsEl.credentials = this.credentials;
       this.credentialsEl.portalBase = message.payload.portalBase ?? '';
+      this.detailEl.portalBase = message.payload.portalBase ?? '';
       this.setKeysLoading(false);
 
       if (!this.selectedCredentialId || !this.credentials.some((item) => item.id === this.selectedCredentialId)) {
@@ -478,6 +481,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.detailEl.credential = null;
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
+    this.detailEl.portalBase = '';
 
     this.modalEl.open = false;
     this.modalEl.loading = false;

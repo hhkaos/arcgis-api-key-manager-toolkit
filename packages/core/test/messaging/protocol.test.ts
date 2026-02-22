@@ -48,6 +48,19 @@ test('serializeMessage + deserializeMessage supports key revoke action payloads'
   assert.deepEqual(responseRoundTrip, response);
 });
 
+test('serializeMessage + deserializeMessage supports open external URL payloads', () => {
+  const message: WebviewProtocolMessage = {
+    type: 'webview/open-external-url',
+    requestId: 'req-open-url',
+    payload: {
+      url: 'https://acme.maps.arcgis.com/home/item.html?id=item-id#settings'
+    }
+  };
+
+  const roundTrip = deserializeMessage(serializeMessage(message));
+  assert.deepEqual(roundTrip, message);
+});
+
 test('deserializeMessage rejects invalid messages', () => {
   assert.throws(() => deserializeMessage('{"type":"unknown","payload":{}}'));
   assert.throws(() => deserializeMessage('{"type":"webview/sign-in","payload":"bad"}'));

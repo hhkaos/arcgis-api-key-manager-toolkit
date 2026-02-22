@@ -102,9 +102,9 @@ export class KeyActionModalElement extends LitElement {
     }
 
     .warning {
-      border: 1px solid #f4c57a;
-      background: #fff8e6;
-      color: #8a4b00;
+      border: 1px solid var(--vscode-editorWarning-foreground, #8a4b00);
+      background: var(--akm-surface-raised);
+      color: var(--vscode-editorWarning-foreground, #8a4b00);
       border-radius: 0;
       padding: 8px;
       font-size: 12px;
@@ -149,8 +149,8 @@ export class KeyActionModalElement extends LitElement {
     }
 
     .result {
-      border: 1px solid #9ad3a6;
-      background: #ecfdf3;
+      border: 1px solid var(--akm-border);
+      background: var(--akm-surface-raised);
       border-radius: 0;
       padding: 8px;
       display: grid;
@@ -170,15 +170,15 @@ export class KeyActionModalElement extends LitElement {
     }
 
     .toast.ok {
-      color: #146c2e;
+      color: var(--vscode-editor-foreground, #18202a);
     }
 
     .toast.error {
-      color: #b42318;
+      color: var(--vscode-errorForeground, #b42318);
     }
 
     .error {
-      color: #b42318;
+      color: var(--vscode-errorForeground, #b42318);
       font-size: 13px;
     }
 
@@ -207,22 +207,11 @@ export class KeyActionModalElement extends LitElement {
       color: var(--akm-primary-foreground);
     }
 
-    button.primary.create {
-      border-color: #2b8a3e;
-      background: #2b8a3e;
-      color: #ffffff;
-    }
-
-    button.primary.regenerate {
-      border-color: #b42318;
-      background: #b42318;
-      color: #ffffff;
-    }
-
+    button.primary.regenerate,
     button.primary.revoke {
-      border-color: #7a271a;
-      background: #7a271a;
-      color: #ffffff;
+      border-color: var(--vscode-errorForeground, #b42318);
+      background: var(--akm-surface-raised);
+      color: var(--vscode-errorForeground, #b42318);
     }
 
     button:disabled {
@@ -286,7 +275,7 @@ export class KeyActionModalElement extends LitElement {
           <div class="row"><div class="label">Existing Created</div><div class="value">${this.existingCreated ? new Date(this.existingCreated).toLocaleString() : 'N/A'}</div></div>
         </div>
 
-        <div class="warning">${warningText}</div>
+        <div class="warning">⚠ ${warningText}</div>
 
         ${
           shouldShowExpirationInput
@@ -316,7 +305,7 @@ export class KeyActionModalElement extends LitElement {
                   <textarea id="generated-key" readonly .value=${this.resultKey}></textarea>
                   <div class="copy-row">
                     <button type="button" @click=${this.handleCopyKey}>Copy Key</button>
-                    ${this.copyState === 'copied' ? html`<span class="toast ok">Copied!</span>` : null}
+                    ${this.copyState === 'copied' ? html`<span class="toast ok">✓ Copied!</span>` : null}
                     ${
                       this.copyState === 'failed'
                         ? html`<span class="toast error">Clipboard unavailable. Key text selected for manual copy.</span>`

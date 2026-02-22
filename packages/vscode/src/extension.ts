@@ -357,9 +357,54 @@ async function handleWebviewMessage(
     case 'webview/key-action':
       await executeKeyActionForEnvironment(services, environment, panel, message.payload);
       break;
+    case 'webview/open-external-url':
+      await openExternalUrlForPanel(services, panel, message.payload.url);
+      break;
     default:
       await handleUnsupportedWebviewMessage(panel, message);
       break;
+  }
+}
+
+async function openExternalUrlForPanel(
+  services: ExtensionServices,
+  panel: vscode.WebviewPanel,
+  url: string
+): Promise<void> {
+  let target: vscode.Uri;
+  try {
+    target = vscode.Uri.parse(url, true);
+  } catch {
+    services.webviewPanels.post(panel, {
+      type: 'host/error',
+      payload: {
+        message: 'Invalid settings URL.',
+        recoverable: true
+      }
+    });
+    return;
+  }
+
+  if (target.scheme !== 'https' && target.scheme !== 'http') {
+    services.webviewPanels.post(panel, {
+      type: 'host/error',
+      payload: {
+        message: 'Blocked non-http URL.',
+        recoverable: true
+      }
+    });
+    return;
+  }
+
+  const opened = await vscode.env.openExternal(target);
+  if (!opened) {
+    services.webviewPanels.post(panel, {
+      type: 'host/error',
+      payload: {
+        message: 'Unable to open external URL.',
+        recoverable: true
+      }
+    });
   }
 }
 

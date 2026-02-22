@@ -29,6 +29,7 @@ type CredentialDetailElement = HTMLElement & {
   credential: ApiKeyCredential | null;
   loading: boolean;
   errorMessage: string;
+  portalBase: string;
 };
 
 type KeyActionModalElement = HTMLElement & {
@@ -177,6 +178,8 @@ class ArcgisApiKeysAppElement extends HTMLElement {
         payload: { credentialId: detail.credentialId }
       });
     });
+    this.credentialsEl.addEventListener('click', (event: Event) => this.handleExternalLinkClick(event), true);
+    this.detailEl.addEventListener('click', (event: Event) => this.handleExternalLinkClick(event), true);
 
     this.detailEl.addEventListener('key-action-request', (event: Event) => {
       const detail = (event as CustomEvent<{
@@ -239,6 +242,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.detailEl.credential = null;
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
+    this.detailEl.portalBase = '';
     this.detailEl.style.display = 'none';
 
     this.modalEl.open = false;
@@ -318,6 +322,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.credentialsEl.errorMessage = '';
       this.credentialsEl.credentials = this.credentials;
       this.credentialsEl.portalBase = message.payload.portalBase ?? '';
+      this.detailEl.portalBase = message.payload.portalBase ?? '';
       this.setKeysLoading(false);
 
       if (!this.selectedCredentialId || !this.credentials.some((item) => item.id === this.selectedCredentialId)) {
@@ -427,6 +432,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.detailEl.credential = null;
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
+    this.detailEl.portalBase = '';
 
     this.modalEl.open = false;
     this.modalEl.loading = false;
@@ -459,6 +465,25 @@ class ArcgisApiKeysAppElement extends HTMLElement {
 
   private setKeysLoading(loading: boolean): void {
     this.loadingEl.style.display = loading ? 'flex' : 'none';
+  }
+
+  private handleExternalLinkClick(event: Event): void {
+    const path = event.composedPath();
+    const anchor = path.find((candidate) => candidate instanceof HTMLAnchorElement);
+    if (!(anchor instanceof HTMLAnchorElement)) {
+      return;
+    }
+
+    const href = anchor.href?.trim();
+    if (!href) {
+      return;
+    }
+
+    event.preventDefault();
+    this.post({
+      type: 'webview/open-external-url',
+      payload: { url: href }
+    });
   }
 
   private syncMasterDetailVisibility(): void {

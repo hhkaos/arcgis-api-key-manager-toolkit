@@ -8,6 +8,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ## Done
 
+- [x] Add "Open API Key settings in ArcGIS ↗" link in `<credential-detail>` header; fix `fetchPortalBase()` to use `urlKey`+`customBaseUrl`; fix expiration milliseconds to `:00`; theme-fix `<key-action-modal>` colors with VS Code tokens; add `webview/open-external-url` protocol message with VS Code handler and Chrome propagation - 2026-02-22
 - [x] Fix slot card partial ID display: always derive from registered app `client_id` as `AT{slot}_{last 8 chars}`; remove unavailable "Created" row - 2026-02-22
 - [x] Add per-slot expiration dates (`expiration` field on `KeySlotStatus`) and per-slot badges (K1/K2) in credential list; add `fetchPortalBase()` and settings deep-links (↗) in list rows; update icon; fix "Doesn't expires" typo - 2026-02-21
 - [x] Fix Online credential retrieval to merge new API token credentials and legacy API key items, then hydrate list/detail metadata (expiration, privileges, key-slot status, tags/referrers) from item + registered app endpoints - 2026-02-20
