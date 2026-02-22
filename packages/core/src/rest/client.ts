@@ -751,6 +751,58 @@ function toArray(value: unknown): unknown[] | null {
   return Array.isArray(value) ? value : null;
 }
 
+function computePartialId(
+  slot: 1 | 2,
+  record: Record<string, unknown>,
+  source: Record<string, unknown>
+): string | undefined {
+  const clientId = readClientIdFromRecord(source) ?? readClientIdFromRecord(record);
+  if (!clientId || clientId.length < 8) {
+    return undefined;
+  }
+
+  return `AT${slot}_${clientId.slice(-8)}`;
+}
+
+function readClientIdFromRecord(source: Record<string, unknown>): string | undefined {
+  const directClientId =
+    readLooseString(source.client_id) ??
+    readLooseString(source.clientId) ??
+    readLooseString(source.clientID) ??
+    readLooseString(source.clientid);
+  if (directClientId) {
+    return directClientId;
+  }
+
+  return findClientIdInValue(source, 0);
+}
+
+function findClientIdInValue(value: unknown, depth: number): string | undefined {
+  if (!isRecord(value) || depth > 3) {
+    return undefined;
+  }
+
+  for (const [key, nestedValue] of Object.entries(value)) {
+    if (key.replace(/[_-]/g, '').toLowerCase() !== 'clientid') {
+      continue;
+    }
+
+    const clientId = readLooseString(nestedValue);
+    if (clientId) {
+      return clientId;
+    }
+  }
+
+  for (const nestedValue of Object.values(value)) {
+    const nestedClientId = findClientIdInValue(nestedValue, depth + 1);
+    if (nestedClientId) {
+      return nestedClientId;
+    }
+  }
+
+  return undefined;
+}
+
 function toCredential(record: unknown): ApiKeyCredential | null {
   if (typeof record === 'string' || typeof record === 'number') {
     const primitiveId = readLooseString(record);
@@ -809,6 +861,18 @@ function toCredential(record: unknown): ApiKeyCredential | null {
           readCredentialExpirationFromTokenSlots(source) ??
           Date.now()
       );
+  const key1Exists =
+    readBoolean(source.key1Exists) ??
+    readBoolean(readNested(source, ['key1', 'exists'])) ??
+    readBoolean(readNested(source, ['apiToken1Active'])) ??
+    hasUsableExpiration(readNested(source, ['apiToken1ExpirationDate'])) ??
+    false;
+  const key2Exists =
+    readBoolean(source.key2Exists) ??
+    readBoolean(readNested(source, ['key2', 'exists'])) ??
+    readBoolean(readNested(source, ['apiToken2Active'])) ??
+    hasUsableExpiration(readNested(source, ['apiToken2ExpirationDate'])) ??
+    false;
 
   return {
     id,
@@ -825,16 +889,8 @@ function toCredential(record: unknown): ApiKeyCredential | null {
       [],
     key1: {
       slot: 1,
-      exists:
-        readBoolean(source.key1Exists) ??
-        readBoolean(readNested(source, ['key1', 'exists'])) ??
-        readBoolean(readNested(source, ['apiToken1Active'])) ??
-        hasUsableExpiration(readNested(source, ['apiToken1ExpirationDate'])) ??
-        false,
-      partialId:
-        readLooseString(readNested(source, ['key1', 'partialId'])) ??
-        readLooseString(readNested(source, ['key1', 'id'])) ??
-        readLooseString(source.apiToken1PartialId),
+      exists: key1Exists,
+      partialId: key1Exists ? computePartialId(1, record, source) : undefined,
       created: toOptionalIsoDate(
         readDateLike(readNested(source, ['key1', 'created'])) ??
           readDateLike(readNested(source, ['apiToken1CreatedDate']))
@@ -846,16 +902,8 @@ function toCredential(record: unknown): ApiKeyCredential | null {
     },
     key2: {
       slot: 2,
-      exists:
-        readBoolean(source.key2Exists) ??
-        readBoolean(readNested(source, ['key2', 'exists'])) ??
-        readBoolean(readNested(source, ['apiToken2Active'])) ??
-        hasUsableExpiration(readNested(source, ['apiToken2ExpirationDate'])) ??
-        false,
-      partialId:
-        readLooseString(readNested(source, ['key2', 'partialId'])) ??
-        readLooseString(readNested(source, ['key2', 'id'])) ??
-        readLooseString(source.apiToken2PartialId),
+      exists: key2Exists,
+      partialId: key2Exists ? computePartialId(2, record, source) : undefined,
       created: toOptionalIsoDate(
         readDateLike(readNested(source, ['key2', 'created'])) ??
           readDateLike(readNested(source, ['apiToken2CreatedDate']))

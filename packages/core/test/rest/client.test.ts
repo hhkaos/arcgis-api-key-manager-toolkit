@@ -173,6 +173,7 @@ test('fetchCredentials falls back to /portals/self when /community/self does not
 
 test('fetchCredentialDetail merges item and registered app responses for online', async () => {
   const itemExpiration = 1790000000000;
+  const registeredAppClientId = 'lgalmA3rH4JC97kO';
   const transport = new MockTransport([
     {
       id: 'item-id',
@@ -184,6 +185,7 @@ test('fetchCredentialDetail merges item and registered app responses for online'
       apiToken2ExpirationDate: -1
     },
     {
+      client_id: registeredAppClientId,
       privileges: ['premium:user:basemaps'],
       httpReferrers: ['http://127.0.0.1:5500']
     },
@@ -209,7 +211,7 @@ test('fetchCredentialDetail merges item and registered app responses for online'
   assert.deepEqual(credential.privileges, ['premium:user:basemaps']);
   assert.deepEqual(credential.referrers, ['http://127.0.0.1:5500']);
   assert.equal(credential.key1.exists, true);
-  assert.equal(credential.key1.partialId, 'b3169iiQ');
+  assert.equal(credential.key1.partialId, 'AT1_H4JC97kO');
   assert.equal(credential.expiration, new Date(itemExpiration).toISOString());
 });
 
@@ -242,6 +244,39 @@ test('fetchCredentialDetail marks active token slots from registeredAppInfo bool
   assert.equal(credential.key1.exists, true);
   assert.equal(credential.key2.exists, false);
   assert.deepEqual(credential.tags, []);
+});
+
+test('fetchCredentialDetail derives partial IDs from registered app client ID for active slots', async () => {
+  const transport = new MockTransport([
+    {
+      id: 'item-id',
+      owner: 'hhkaos2',
+      title: 'Active tokens',
+      tags: [],
+      created: 1710000000000,
+      apiToken1ExpirationDate: -1,
+      apiToken2ExpirationDate: -1
+    },
+    {
+      clientID: 'lgalmA3rH4JC97kO',
+      apiToken1Active: true,
+      apiToken2Active: true,
+      privileges: []
+    },
+    {}
+  ]);
+
+  const client = new ArcGisRestClientImpl(transport);
+  const credential = await client.fetchCredentialDetail({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id'
+  });
+
+  assert.equal(credential.key1.exists, true);
+  assert.equal(credential.key2.exists, true);
+  assert.equal(credential.key1.partialId, 'AT1_H4JC97kO');
+  assert.equal(credential.key2.partialId, 'AT2_H4JC97kO');
 });
 
 test('fetchCredentials enriches online list rows with detail metadata', async () => {

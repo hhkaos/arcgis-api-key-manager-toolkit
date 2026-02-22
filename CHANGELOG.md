@@ -77,6 +77,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Online credential loading now falls back from `/community/self` to `/portals/self` to resolve username robustly when building owner-scoped search filters.
 - **Core:** Key creation no longer silently swallows expiration validation errors; missing expiration now surfaces as an `INVALID_REQUEST` error before any REST calls are made.
 
+### Fixed (2026-02-22)
+
+- **Core:** Slot card partial IDs now always derive from the registered app `client_id` using the pattern `AT{slot}_{last 8 chars}` instead of absent API fields, so they display correctly instead of showing N/A.
+- **Core:** Fixed `computePartialId` reading `client_id` from the top-level merged record rather than the `pickSourceRecord`-narrowed source, which could strip the field when a legacy credential wrapper was present.
+- **Core:** Removed "Created: N/A" row from slot cards — creation date is not available from the API.
+
 ---
 
 ## [0.1] - 2026-02-20

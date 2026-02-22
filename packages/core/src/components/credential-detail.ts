@@ -307,7 +307,6 @@ export class CredentialDetailElement extends LitElement {
           <div class="value">${slot.exists ? 'Exists' : 'Not created'}</div>
         </div>
         <div class="note">Partial ID: ${slot.partialId ?? 'N/A'}</div>
-        <div class="note">Created: ${slot.created ? new Date(slot.created).toLocaleString() : 'N/A'}</div>
         <div class="note">
           Expires:
           ${slot.exists && slot.expiration
