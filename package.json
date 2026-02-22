@@ -12,6 +12,8 @@
     "build:core": "npm run build --workspace=packages/core",
     "build:vscode": "npm run build --workspace=packages/vscode",
     "build:chrome": "npm run build --workspace=packages/chrome",
+    "package:vscode": "npm run build:core && npm run build:vscode && npm run package --workspace=packages/vscode",
+    "package:chrome": "npm run build:core && npm run build:chrome && cd packages/chrome && VERSION=$(node -p \"require('./package.json').version\") && zip -r \"arcgis-api-key-explorer-chrome-v${VERSION}.zip\" dist/",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "npm run test --workspace=packages/core && npm run test --workspace=packages/vscode"

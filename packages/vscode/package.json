@@ -2,7 +2,7 @@
   "name": "arcgis-api-key-explorer",
   "displayName": "ArcGIS API Key Explorer",
   "description": "Explore and manage ArcGIS API key credentials.",
-  "publisher": "local-dev",
+  "publisher": "hhkaos",
   "version": "0.1.0",
   "private": true,
   "type": "commonjs",
@@ -112,7 +112,8 @@
   "scripts": {
     "build": "node ./scripts/build.mjs",
     "watch": "node ./scripts/build.mjs --watch",
-    "test": "tsc -p tsconfig.test.json && node --test \"dist-test/test/**/*.test.js\""
+    "test": "tsc -p tsconfig.test.json && node --test \"dist-test/test/**/*.test.js\"",
+    "package": "npx @vscode/vsce package --no-dependencies"
   },
   "dependencies": {
     "@arcgis-api-keys/core": "0.1.0"

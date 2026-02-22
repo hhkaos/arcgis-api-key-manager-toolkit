@@ -16,7 +16,7 @@ Monorepo with npm workspaces and three packages:
 
 - **TypeScript** (strict mode, ES2020+)
 - **Lit** for shared web components (used in VS Code WebViews and Chrome tabs)
-- **@esri/arcgis-rest-js** for ArcGIS REST API calls
+- **@esri/arcgis-rest-js** installed but not used for key mutation flows (direct REST calls only)
 - **esbuild** for bundling
 - **OAuth 2.0** with Authorization Code + PKCE flow
 
@@ -43,7 +43,7 @@ Build order matters: core must be built before vscode and chrome.
 - Use conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
 - Scope to package when applicable: `feat(core):`, `fix(vscode):`, `chore(chrome):`
 - The user has two git aliases for committing:
-  - `git cai` — AI-attributed commit (author: "AI Generated (hhkaos)")
+  - `git cai` — AI-attributed commit: sets author to "AI Generated (hhkaos)" and prepends "AI: " to the message
   - `git ch` — Regular commit with user's default identity
 - Always ask which alias to use before committing
 - Never use `git add -A` or `git add .`; stage files by name
@@ -62,3 +62,12 @@ Use the `/release` skill for versioned releases with tags and GitHub Releases.
 - Read-only access to credentials (no admin/org-wide management in v1)
 - Update `CHANGELOG.md`, `docs/TODO.md`, and `docs/SPEC.md` (if relevant) with every commit
 - If expiration date lookup via `https://www.arcgis.com/sharing/rest/portals/self/apiTokens` fails, it may require username/password-based auth in that context; pause and ask the user how to proceed before forcing an auth-mode change.
+
+## Key Implementation Details
+
+- **Portal base URL:** derived from `urlKey` + `customBaseUrl` in `/portals/self`; falls back to `https://{urlKey}.maps.arcgis.com` when `customBaseUrl` is absent. Enterprise uses `portalUrl` directly.
+- **Slot partial IDs:** displayed as `AT{slot}_{last 8 chars of client_id}` (e.g. `AT1_a1b2c3d4`). Derived from registered app `client_id`, not from API token fields.
+- **Key mutation flow:** item owner lookup → `/registeredAppInfo` → `/items/{id}/update` (expiration) → `/oauth2/token` or `/oauth2/revokeToken`. No `@esri/arcgis-rest-js` key mutation calls.
+- **External links in VS Code webview:** anchor clicks are intercepted in `webview-ui.ts` and posted as `webview/open-external-url` messages; the extension host validates the scheme (http/https only) and opens via `vscode.env.openExternal`. Never let the webview navigate directly.
+- **Theming:** all colors use VS Code theme tokens (`--vscode-*`) with `--akm-*` design tokens as the semantic layer. No hardcoded hex colors in components.
+- **`portalBase` propagation:** must be set on both `<credential-list>` and `<credential-detail>` whenever credentials are loaded or cleared.

@@ -10,6 +10,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Release:** GitHub Actions `release.yml` workflow — triggered on `v*.*.*` tag push (or `workflow_dispatch`); builds all packages, runs tests, packages `.vsix` via `@vscode/vsce` and Chrome `.zip`, then creates a GitHub Release with both artifacts attached.
+- **VS Code:** `.vscodeignore` to exclude `src/`, `scripts/`, `dist-test/`, `tsconfig*.json`, and source maps from the `.vsix` bundle.
+- **VS Code:** `package` script (`npx @vscode/vsce package --no-dependencies`) in `packages/vscode/package.json`.
+- **Root:** `package:vscode` and `package:chrome` convenience scripts for local packaging.
+
 - Monorepo workspace implementation for `packages/core`, `packages/vscode`, and `packages/chrome` with strict TypeScript, build scripts, and test wiring.
 - Shared core domain layer: environment management, ArcGIS REST client wrappers, filtering/sorting/expiration logic, and host/webview messaging protocol.
 - Shared Lit component set for configuration, sign-in, credential list/detail, expiration badges, and key create/regenerate modal flows.
@@ -44,6 +49,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Chrome:** Extension icons declared in manifest at 16/32/48/128px sizes.
 
 ### Changed
+
+- **VS Code:** `publisher` updated from `local-dev` to `hhkaos` in `packages/vscode/package.json`.
 
 - **Core:** Expiration badge states (ok/warning/critical/expired) now use VS Code theme tokens (`--vscode-editor-foreground`, `--vscode-editorWarning-foreground`, `--vscode-errorForeground`) instead of hardcoded colors; badges use a neutral theme-background surface; emoji prefixes (✓ / ⚠ / ✕) convey status without relying on background color.
 - **Core:** Credential detail slot cards use `--akm-surface-raised` / `--akm-border` instead of hardcoded `#ffffff` / `#d9e1e8`; warning referrer border uses `--vscode-editorWarning-foreground`; "Review" label uses theme warning color; action button labels prefixed with `↺` / `✕` / `+` symbols; regenerate/revoke buttons styled with `--vscode-errorForeground` on a theme-background surface instead of hardcoded dark reds.

@@ -8,6 +8,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ## Done
 
+- [x] Add GitHub Actions release workflow, `.vscodeignore`, `package` scripts for `.vsix` and Chrome `.zip`; update publisher to `hhkaos` - 2026-02-22
 - [x] Add "Open API Key settings in ArcGIS ↗" link in `<credential-detail>` header; fix `fetchPortalBase()` to use `urlKey`+`customBaseUrl`; fix expiration milliseconds to `:00`; theme-fix `<key-action-modal>` colors with VS Code tokens; add `webview/open-external-url` protocol message with VS Code handler and Chrome propagation - 2026-02-22
 - [x] Fix slot card partial ID display: always derive from registered app `client_id` as `AT{slot}_{last 8 chars}`; remove unavailable "Created" row - 2026-02-22
 - [x] Add per-slot expiration dates (`expiration` field on `KeySlotStatus`) and per-slot badges (K1/K2) in credential list; add `fetchPortalBase()` and settings deep-links (↗) in list rows; update icon; fix "Doesn't expires" typo - 2026-02-21
@@ -249,14 +250,14 @@ Status: `[x] Baseline implemented` (moved ahead of remaining VS Code polish on 2
 
 ### 5.1 VS Code Extension
 
-- [ ] Package as `.vsix`
+- [x] Package as `.vsix` (GitHub release via Actions; Marketplace submission later)
 - [ ] Write Marketplace listing description
 - [x] Document OAuth setup instructions (README)
 - [ ] Security review of SecretStorage usage
 
 ### 5.2 Chrome Extension
 
-- [ ] Package for Chrome Web Store
+- [x] Package Chrome extension as `.zip` (GitHub release via Actions; Web Store submission later)
 - [ ] Write permission justification
 - [ ] Document OAuth setup and redirect URI configuration
 - [ ] Security review of manifest permissions
