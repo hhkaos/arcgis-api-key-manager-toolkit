@@ -2,7 +2,7 @@
 
 ## Chrome Extension & VS Code Extension
 
-**Functional & Technical Specification (v1.2)**
+**Functional & Technical Specification (v1.2) — product release 1.0.0**
 
 ---
 

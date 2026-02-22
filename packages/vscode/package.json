@@ -3,7 +3,7 @@
   "displayName": "ArcGIS API Key Explorer",
   "description": "Explore and manage ArcGIS API key credentials.",
   "publisher": "hhkaos",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "commonjs",
   "engines": {
@@ -116,7 +116,7 @@
     "package": "npx @vscode/vsce package --no-dependencies"
   },
   "dependencies": {
-    "@arcgis-api-keys/core": "0.1.0"
+    "@arcgis-api-keys/core": "1.0.0"
   },
   "devDependencies": {
     "@types/vscode": "^1.96.0"

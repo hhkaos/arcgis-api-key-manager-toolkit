@@ -1,7 +1,8 @@
 src/**
 scripts/**
+test/**
 dist-test/**
 tsconfig*.json
 .eslint*
 .prettier*
-*.map
+**/*.map

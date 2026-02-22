@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [1.0.0] - 2026-02-22
+
 ### Added
 
 - **Release:** GitHub Actions `release.yml` workflow — triggered on `v*.*.*` tag push (or `workflow_dispatch`); builds all packages, runs tests, packages `.vsix` via `@vscode/vsce` and Chrome `.zip`, then creates a GitHub Release with both artifacts attached.
@@ -88,8 +92,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Credential detail/list metadata mapping now hydrates from item + registered app info endpoints so expiration dates, privileges, tags, and key slot existence render correctly in the list/detail UI.
 - Online credential loading now falls back from `/community/self` to `/portals/self` to resolve username robustly when building owner-scoped search filters.
 - **Core:** Key creation no longer silently swallows expiration validation errors; missing expiration now surfaces as an `INVALID_REQUEST` error before any REST calls are made.
-
-### Fixed (2026-02-22)
 
 - **Core:** Slot card partial IDs now always derive from the registered app `client_id` using the pattern `AT{slot}_{last 8 chars}` instead of absent API fields, so they display correctly instead of showing N/A.
 - **Core:** Fixed `computePartialId` reading `client_id` from the top-level merged record rather than the `pickSourceRecord`-narrowed source, which could strip the field when a legacy credential wrapper was present.

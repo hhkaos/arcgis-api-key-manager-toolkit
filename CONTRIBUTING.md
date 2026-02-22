@@ -90,9 +90,11 @@ Sensitive fields (`token`, `authorization`, `key`, etc.) are redacted in verbose
 ## OAuth Notes
 
 - Developers must provide their own ArcGIS OAuth client ID.
-- For current local VS Code extension identity (`local-dev.arcgis-api-key-explorer`), set redirect URI(s):
-  - `vscode://local-dev.arcgis-api-key-explorer/auth-callback`
-  - `vscode-insiders://local-dev.arcgis-api-key-explorer/auth-callback` (if needed)
+- The VS Code extension ID is `<publisher>.<name>` from `packages/vscode/package.json`, currently `hhkaos.arcgis-api-key-explorer`.
+- Register these redirect URI(s) in your ArcGIS OAuth app:
+  - `vscode://hhkaos.arcgis-api-key-explorer/auth-callback`
+  - `vscode-insiders://hhkaos.arcgis-api-key-explorer/auth-callback` (if needed)
+- If you fork and change `publisher` or `name`, update redirect URI(s) to match.
 
 ## Running the Chrome Extension Locally
 
@@ -133,6 +135,24 @@ Do not log:
 - full sensitive credential payloads without redaction
 
 If adding new diagnostics, keep redaction in place and prefer temporary logs for troubleshooting.
+
+## Lint and Format
+
+```bash
+npm run lint
+npm run format
+```
+
+## Local Packaging
+
+To produce the installable artifacts locally (without pushing a release tag):
+
+```bash
+npm run package:vscode   # → packages/vscode/arcgis-api-key-explorer-X.X.X.vsix
+npm run package:chrome   # → packages/chrome/arcgis-api-key-explorer-chrome-vX.X.X.zip
+```
+
+Both scripts rebuild their dependencies from source before packaging.
 
 ## Commit and Documentation Expectations
 
