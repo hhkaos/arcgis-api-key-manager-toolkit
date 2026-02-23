@@ -56,6 +56,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **All:** Updated disclaimer text across all sign-in surfaces to be shorter and more personal ("experimental side project made for personal use"); shortened the GitHub issues link to just "issues".
+
+- **VS Code:** Completed acknowledgement checkbox gate in the webview shell (`webview-ui.ts`); sign-in button is now disabled until the user checks the "I have read the warning" checkbox (was missing from previous commit).
+
+- **Chrome:** Completed acknowledgement checkbox gate in the full-tab explorer (`explorer.ts`); sign-in button is now disabled until the user checks the acknowledgement checkbox (was missing from previous commit).
+
 - **Core:** Reordered `<credential-detail>` sections — API Key Slots first, Privileges second, Referrer Restrictions third, Metadata last.
 - **Core:** "Edit referrers" button moved below the referrer list and changed to full-width.
 - **Core:** `<credential-list>` column sizing extracted to `--akm-credential-columns` CSS custom property and `box-sizing: border-box` applied to header/row for consistent layout.

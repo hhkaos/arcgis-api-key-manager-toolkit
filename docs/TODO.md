@@ -8,6 +8,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ## Done
 
+- [x] Refine disclaimer text across all sign-in surfaces and complete acknowledgement checkbox gate in VS Code webview shell and Chrome full-tab explorer; sign-in button disabled until checkbox checked on both surfaces - 2026-02-23
 - [x] Fix Chrome explorer session-expired handling to silently transition to logged-out state (hides credential list, shows sign-in); update popup env dropdown to show `name (Type)`; rename type options to "ArcGIS Location Platform" / "ArcGIS Enterprise"; disable Enterprise option with coming-soon note; persist disclaimer acknowledgement in localStorage - 2026-02-23
 - [x] Add disclaimer banner and acknowledgement checkbox to all sign-in surfaces (`<sign-in-view>`, VS Code webview shell, Chrome popup, Chrome explorer); sign-in button disabled until user acknowledges "not an official Esri project" notice; add disclaimer note to README - 2026-02-23
 - [x] Add delete protection toggle, favorite toggle, and delete credential (with `canDelete` confirmation modal) to `<credential-detail>`; add `toggleItemDeleteProtection()`, `canDeleteCredential()`, `deleteCredential()`, `toggleCredentialFavorite()` REST methods; populate `isDeleteProtected` and `isFavorite` in `fetchCredentialDetail()`; extend protocol with 6 new messages; wire VS Code and Chrome for all flows; add "Create API key ↗" header link for Online environments - 2026-02-23

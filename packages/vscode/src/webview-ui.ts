@@ -58,6 +58,8 @@ const vscode = acquireVsCodeApi();
 class ArcgisApiKeysAppElement extends HTMLElement {
   private readonly statusEl = document.createElement('p');
   private readonly disclaimerEl = document.createElement('p');
+  private readonly acknowledgeLabelEl = document.createElement('label');
+  private readonly acknowledgeCheckboxEl = document.createElement('input');
   private readonly loadingEl = document.createElement('div');
   private readonly infoEl = document.createElement('p');
   private readonly warningEl = document.createElement('p');
@@ -126,8 +128,23 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.disclaimerEl.style.fontSize = '12px';
     this.disclaimerEl.style.lineHeight = '1.4';
     this.disclaimerEl.innerHTML =
-      '⚠️ This is an open source side project made for fun. It is not an official Esri project, so use it at your own risk. It is maintained by the community. For bugs or ideas, use <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues">https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues</a>.';
+      '⚠️ This is not an official Esri project or maintained by Esri, so <strong>use it at your own risk</strong>. It is an experimental side project made for fun and for personal use. If you still decide to use it, I would love to hear your opinion at <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">issues</a>.';
     this.disclaimerEl.addEventListener('click', (event: Event) => this.handleExternalLinkClick(event), true);
+
+    this.acknowledgeCheckboxEl.type = 'checkbox';
+    this.acknowledgeCheckboxEl.style.margin = '2px 0 0 0';
+    this.acknowledgeCheckboxEl.addEventListener('change', () => {
+      this.syncUiState();
+    });
+    this.acknowledgeLabelEl.style.display = 'flex';
+    this.acknowledgeLabelEl.style.alignItems = 'flex-start';
+    this.acknowledgeLabelEl.style.gap = '6px';
+    this.acknowledgeLabelEl.style.fontSize = '12px';
+    this.acknowledgeLabelEl.style.lineHeight = '1.4';
+    this.acknowledgeLabelEl.style.cursor = 'pointer';
+    const ackSpan = document.createElement('span');
+    ackSpan.textContent = 'I have read the warning message above and I understand I want to proceed.';
+    this.acknowledgeLabelEl.append(this.acknowledgeCheckboxEl, ackSpan);
 
     this.loadingEl.style.display = 'none';
     this.loadingEl.style.alignItems = 'center';
@@ -435,6 +452,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.headerEl,
       this.statusEl,
       this.disclaimerEl,
+      this.acknowledgeLabelEl,
       this.loadingEl,
       this.infoEl,
       this.warningEl,
@@ -614,7 +632,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.backButton.hidden = this.authState !== 'logged-in' || !this.detailMode;
     this.createApiKeyLink.hidden = this.authState !== 'logged-in' || !this.createApiKeyUrl;
 
-    this.signInButton.disabled = isBusy;
+    this.signInButton.disabled = isBusy || !this.isWarningAcknowledged();
     this.signOutButton.disabled = isBusy;
     this.refreshButton.disabled = isBusy;
     this.backButton.disabled = isBusy;
@@ -622,6 +640,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.createApiKeyLink.style.opacity = isBusy ? '0.7' : '1';
     const showWarningGate = this.authState === 'logged-out' || this.authState === 'logging-in';
     this.disclaimerEl.hidden = !showWarningGate;
+    this.acknowledgeLabelEl.style.display = showWarningGate ? 'flex' : 'none';
 
     this.syncMasterDetailVisibility();
 
@@ -750,6 +769,10 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     }
 
     this.headerActionsEl.replaceChildren(this.refreshButton, this.signOutButton);
+  }
+
+  private isWarningAcknowledged(): boolean {
+    return this.acknowledgeCheckboxEl.checked;
   }
 }
 

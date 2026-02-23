@@ -101,8 +101,9 @@ export class SignInViewElement extends LitElement {
       <div class="card">
         <p>Sign in to load your API key credentials for the active environment.</p>
         <p class="disclaimer">
-          ⚠️ This is an open source side project made for fun. It is not an official Esri project, so use it at your own risk. It is maintained by the community. For bugs or ideas, use
-          <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues</a>.
+          ⚠️ This is an open source side project made for fun. It is not an official Esri project, so <strong>use it at your own risk</strong>. It is maintained by the community.<br /><br />
+          This is an experimental side project made for personal use. If anyone tries it or likes it, I would love to hear their feedback in the
+          <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">issues</a>.
         </p>
         <label class="acknowledge">
           <input type="checkbox" .checked=${this.acknowledged} @change=${this.handleAcknowledgementChange} />
