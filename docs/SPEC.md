@@ -2,7 +2,7 @@
 
 ## Chrome Extension & VS Code Extension
 
-**Functional & Technical Specification (v1.2) — product release 1.0.0**
+**Functional & Technical Specification (v1.3) — product release 1.1.0**
 
 ---
 
@@ -191,6 +191,7 @@ Each item shows:
   - Legacy API keys show a single non-expiring badge
 - Privilege and referrer counts
 - Settings link (↗) opening the ArcGIS item settings page in a new tab (when `portalBase` is available)
+- Usage link (chart icon) to Location Platform usage dashboard for Location Platform environments
 
 #### Data Loading
 
@@ -200,7 +201,8 @@ Each item shows:
 
 #### Filters
 
-- Search by name
+- Search by name, referrer domain, or partial API key ID
+- Favorites only quick toggle
 - Filter by tag
 - Filter by privilege
 - Filter by expiration state

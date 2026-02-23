@@ -1,6 +1,6 @@
 {
   "name": "@arcgis-api-keys/chrome",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +8,6 @@
     "test": "tsc -p tsconfig.test.json && node --test \"dist-test/test/**/*.test.js\""
   },
   "dependencies": {
-    "@arcgis-api-keys/core": "1.0.0"
+    "@arcgis-api-keys/core": "1.1.0"
   }
 }

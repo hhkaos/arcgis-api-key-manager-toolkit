@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [1.1.0] - 2026-02-23
+
 ### Added
 
 - **Core:** `environmentType` property on `<credential-list>` — renders a `chart-line` usage icon column linked to `https://location.arcgis.com/usage/credentials/{id}/` for each row when environment type is `location-platform`; added "View Usage" link in `<credential-detail>` header for Location Platform environments; added `chart-line` icon to `<akm-icon>`.
