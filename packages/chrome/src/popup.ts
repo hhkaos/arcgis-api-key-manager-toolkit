@@ -13,6 +13,9 @@ import {
 } from './popup-state.js';
 
 const statusEl = requireElement<HTMLParagraphElement>('popup-status');
+const disclaimerEl = requireElement<HTMLParagraphElement>('popup-disclaimer');
+const acknowledgeLabelEl = requireElement<HTMLLabelElement>('popup-acknowledge-label');
+const acknowledgeCheckboxEl = requireElement<HTMLInputElement>('popup-acknowledge');
 const errorEl = requireElement<HTMLParagraphElement>('popup-error');
 const envSelectEl = requireElement<HTMLSelectElement>('env-select');
 const signInButton = requireElement<HTMLButtonElement>('sign-in');
@@ -33,6 +36,10 @@ let state: ChromeState = {
 
 envTypeEl.addEventListener('change', () => {
   syncPortalFieldVisibility();
+});
+
+acknowledgeCheckboxEl.addEventListener('change', () => {
+  render();
 });
 
 signInButton.addEventListener('click', async () => {
@@ -176,8 +183,10 @@ function render(): void {
   signInButton.hidden = !controls.showSignIn;
   signOutButton.hidden = !controls.showSignOut;
   openExplorerButton.hidden = !controls.showOpenExplorer;
+  disclaimerEl.hidden = !controls.showSignIn;
+  acknowledgeLabelEl.hidden = !controls.showSignIn;
 
-  signInButton.disabled = !controls.showSignIn;
+  signInButton.disabled = !controls.showSignIn || !acknowledgeCheckboxEl.checked;
   signOutButton.disabled = !controls.showSignOut;
   openExplorerButton.disabled = !controls.showOpenExplorer;
 }

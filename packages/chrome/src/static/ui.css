@@ -27,6 +27,15 @@ h1 {
   color: #425466;
 }
 
+.disclaimer {
+  margin: 0;
+  padding: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  border-left: 3px solid #d97706;
+  background: #fff8eb;
+}
+
 .row {
   display: flex;
   gap: 8px;
@@ -41,6 +50,21 @@ h1 {
   display: grid;
   gap: 4px;
   font-size: 12px;
+}
+
+.checkbox-field {
+  gap: 0;
+}
+
+.checkbox-field span {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.35;
+}
+
+.checkbox-field input[type='checkbox'] {
+  margin: 2px 0 0 0;
 }
 
 .field[hidden] {

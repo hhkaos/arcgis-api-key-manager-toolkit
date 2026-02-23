@@ -4,7 +4,8 @@ export class SignInViewElement extends LitElement {
   public static override properties = {
     loading: { type: Boolean },
     disabled: { type: Boolean },
-    errorMessage: { type: String, attribute: 'error-message' }
+    errorMessage: { type: String, attribute: 'error-message' },
+    acknowledged: { type: Boolean }
   };
 
   public static override styles = css`
@@ -41,6 +42,30 @@ export class SignInViewElement extends LitElement {
       font-size: 13px;
     }
 
+    .disclaimer {
+      border-left: 3px solid #d97706;
+      padding-left: 8px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .disclaimer a {
+      color: var(--akm-primary);
+    }
+
+    .acknowledge {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 12px;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+
+    .acknowledge input[type='checkbox'] {
+      margin: 2px 0 0 0;
+    }
+
     button {
       width: max-content;
       border: 1px solid var(--akm-primary);
@@ -69,13 +94,22 @@ export class SignInViewElement extends LitElement {
   public loading: boolean = false;
   public disabled: boolean = false;
   public errorMessage: string = '';
+  public acknowledged: boolean = false;
 
   public override render() {
     return html`
       <div class="card">
         <p>Sign in to load your API key credentials for the active environment.</p>
+        <p class="disclaimer">
+          ⚠️ This is an open source side project made for fun. It is not an official Esri project, so use it at your own risk. It is maintained by the community. For bugs or ideas, use
+          <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues</a>.
+        </p>
+        <label class="acknowledge">
+          <input type="checkbox" .checked=${this.acknowledged} @change=${this.handleAcknowledgementChange} />
+          <span>I have read the warning message above and I understand I want to proceed.</span>
+        </label>
         ${this.errorMessage ? html`<div class="error">${this.errorMessage}</div>` : null}
-        <button @click=${this.handleSignIn} ?disabled=${this.loading || this.disabled}>
+        <button @click=${this.handleSignIn} ?disabled=${this.loading || this.disabled || !this.acknowledged}>
           ${this.loading ? 'Signing in...' : 'Sign in with ArcGIS'}
         </button>
       </div>
@@ -89,6 +123,10 @@ export class SignInViewElement extends LitElement {
         composed: true
       })
     );
+  }
+
+  private handleAcknowledgementChange(event: Event): void {
+    this.acknowledged = (event.target as HTMLInputElement).checked;
   }
 }
 

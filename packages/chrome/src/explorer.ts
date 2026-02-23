@@ -47,6 +47,7 @@ type AuthState = 'checking' | 'logged-out' | 'logging-in' | 'logged-in' | 'loggi
 
 class ArcgisApiKeysAppElement extends HTMLElement {
   private readonly statusEl = document.createElement('p');
+  private readonly disclaimerEl = document.createElement('p');
   private readonly loadingEl = document.createElement('div');
   private readonly infoEl = document.createElement('p');
   private readonly warningEl = document.createElement('p');
@@ -56,6 +57,8 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   private readonly actionsEl = document.createElement('div');
   private readonly createApiKeyLink = document.createElement('a');
   private readonly environmentSelectEl = document.createElement('select');
+  private readonly acknowledgeLabelEl = document.createElement('label');
+  private readonly acknowledgeCheckboxEl = document.createElement('input');
   private readonly signInButton = document.createElement('button');
   private readonly signOutButton = document.createElement('button');
   private readonly refreshButton = document.createElement('button');
@@ -105,6 +108,14 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.statusEl.style.margin = '0';
     this.statusEl.style.fontSize = '13px';
 
+    this.disclaimerEl.style.margin = '0';
+    this.disclaimerEl.style.padding = '8px';
+    this.disclaimerEl.style.borderLeft = '3px solid #d97706';
+    this.disclaimerEl.style.fontSize = '12px';
+    this.disclaimerEl.style.lineHeight = '1.4';
+    this.disclaimerEl.innerHTML =
+      '⚠️ This is an open source side project made for fun. It is not an official Esri project, so use it at your own risk. It is maintained by the community. For bugs or ideas, use <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues</a>.';
+
     this.loadingEl.style.display = 'none';
     this.loadingEl.style.alignItems = 'center';
     this.loadingEl.style.gap = '8px';
@@ -133,6 +144,22 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.actionsEl.style.alignItems = 'center';
     this.actionsEl.style.gap = '8px';
     this.actionsEl.style.flexWrap = 'wrap';
+
+    this.acknowledgeLabelEl.style.display = 'flex';
+    this.acknowledgeLabelEl.style.alignItems = 'flex-start';
+    this.acknowledgeLabelEl.style.gap = '6px';
+    this.acknowledgeLabelEl.style.fontSize = '12px';
+    this.acknowledgeLabelEl.style.lineHeight = '1.35';
+    this.acknowledgeLabelEl.style.cursor = 'pointer';
+
+    this.acknowledgeCheckboxEl.type = 'checkbox';
+    this.acknowledgeCheckboxEl.style.margin = '2px 0 0 0';
+    this.acknowledgeCheckboxEl.addEventListener('change', () => this.syncUiState());
+
+    const acknowledgeTextEl = document.createElement('span');
+    acknowledgeTextEl.textContent =
+      'I have read the warning message above and I understand I want to proceed.';
+    this.acknowledgeLabelEl.replaceChildren(this.acknowledgeCheckboxEl, acknowledgeTextEl);
 
     setupPrimaryLink(this.createApiKeyLink, 'Create API key ↗');
     this.environmentSelectEl.style.minWidth = '260px';
@@ -417,6 +444,8 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     root.append(
       this.headerEl,
       this.statusEl,
+      this.disclaimerEl,
+      this.acknowledgeLabelEl,
       this.loadingEl,
       this.infoEl,
       this.warningEl,
@@ -639,12 +668,15 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.backButton.hidden = this.authState !== 'logged-in' || !this.detailMode;
     this.createApiKeyLink.hidden = this.authState !== 'logged-in' || !this.createApiKeyUrl;
 
-    this.signInButton.disabled = isBusy;
+    const requiresAcknowledgement = !this.signInButton.hidden;
+    this.signInButton.disabled = isBusy || (requiresAcknowledgement && !this.acknowledgeCheckboxEl.checked);
     this.signOutButton.disabled = isBusy;
     this.refreshButton.disabled = isBusy;
     this.backButton.disabled = isBusy;
     this.createApiKeyLink.style.pointerEvents = isBusy ? 'none' : 'auto';
     this.createApiKeyLink.style.opacity = isBusy ? '0.7' : '1';
+    this.disclaimerEl.hidden = this.signInButton.hidden;
+    this.acknowledgeLabelEl.hidden = this.disclaimerEl.hidden;
 
     this.credentialsEl.hidden = this.authState !== 'logged-in' || this.detailMode;
     this.detailEl.hidden = this.authState !== 'logged-in' || !this.detailMode;

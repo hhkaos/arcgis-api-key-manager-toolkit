@@ -57,6 +57,7 @@ const vscode = acquireVsCodeApi();
 
 class ArcgisApiKeysAppElement extends HTMLElement {
   private readonly statusEl = document.createElement('p');
+  private readonly disclaimerEl = document.createElement('p');
   private readonly loadingEl = document.createElement('div');
   private readonly infoEl = document.createElement('p');
   private readonly warningEl = document.createElement('p');
@@ -65,6 +66,8 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   private readonly headerActionsEl = document.createElement('div');
   private readonly actionsEl = document.createElement('div');
   private readonly createApiKeyLink = document.createElement('a');
+  private readonly acknowledgeLabelEl = document.createElement('label');
+  private readonly acknowledgeCheckboxEl = document.createElement('input');
   private readonly signInButton = document.createElement('button');
   private readonly signOutButton = document.createElement('button');
   private readonly refreshButton = document.createElement('button');
@@ -119,6 +122,15 @@ class ArcgisApiKeysAppElement extends HTMLElement {
 
     this.statusEl.style.margin = '0';
 
+    this.disclaimerEl.style.margin = '0';
+    this.disclaimerEl.style.padding = '8px';
+    this.disclaimerEl.style.borderLeft = '3px solid var(--vscode-editorWarning-foreground, #8a4b00)';
+    this.disclaimerEl.style.fontSize = '12px';
+    this.disclaimerEl.style.lineHeight = '1.4';
+    this.disclaimerEl.innerHTML =
+      '⚠️ This is an open source side project made for fun. It is not an official Esri project, so use it at your own risk. It is maintained by the community. For bugs or ideas, use <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues">https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues</a>.';
+    this.disclaimerEl.addEventListener('click', (event: Event) => this.handleExternalLinkClick(event), true);
+
     this.loadingEl.style.display = 'none';
     this.loadingEl.style.alignItems = 'center';
     this.loadingEl.style.gap = '8px';
@@ -149,6 +161,22 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.actionsEl.style.alignItems = 'center';
     this.actionsEl.style.gap = '6px';
     this.actionsEl.style.flexWrap = 'wrap';
+
+    this.acknowledgeLabelEl.style.display = 'flex';
+    this.acknowledgeLabelEl.style.alignItems = 'flex-start';
+    this.acknowledgeLabelEl.style.gap = '6px';
+    this.acknowledgeLabelEl.style.fontSize = '12px';
+    this.acknowledgeLabelEl.style.lineHeight = '1.35';
+    this.acknowledgeLabelEl.style.cursor = 'pointer';
+
+    this.acknowledgeCheckboxEl.type = 'checkbox';
+    this.acknowledgeCheckboxEl.style.margin = '2px 0 0 0';
+    this.acknowledgeCheckboxEl.addEventListener('change', () => this.syncUiState());
+
+    const acknowledgeTextEl = document.createElement('span');
+    acknowledgeTextEl.textContent =
+      'I have read the warning message above and I understand I want to proceed.';
+    this.acknowledgeLabelEl.replaceChildren(this.acknowledgeCheckboxEl, acknowledgeTextEl);
 
     setupPrimaryLink(this.createApiKeyLink, 'Create API key ↗');
     setupButton(this.signInButton, 'Sign in with ArcGIS');
@@ -417,13 +445,15 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.modalEl.errorMessage = '';
     this.modalEl.resultKey = null;
 
-    this.headerActionsEl.append(this.createApiKeyLink, this.refreshButton, this.signOutButton);
+    this.headerActionsEl.append(this.refreshButton, this.signOutButton);
     this.actionsEl.append(this.signInButton, this.backButton);
     this.headerEl.append(title, this.headerActionsEl);
 
     root.append(
       this.headerEl,
       this.statusEl,
+      this.disclaimerEl,
+      this.acknowledgeLabelEl,
       this.loadingEl,
       this.infoEl,
       this.warningEl,
@@ -592,6 +622,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
 
   private syncUiState(): void {
     this.syncCreateApiKeyLink();
+    this.syncHeaderActions();
 
     const isBusy =
       this.authState === 'checking' || this.authState === 'logging-in' || this.authState === 'logging-out';
@@ -602,12 +633,15 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.backButton.hidden = this.authState !== 'logged-in' || !this.detailMode;
     this.createApiKeyLink.hidden = this.authState !== 'logged-in' || !this.createApiKeyUrl;
 
-    this.signInButton.disabled = isBusy;
+    const requiresAcknowledgement = !this.signInButton.hidden;
+    this.signInButton.disabled = isBusy || (requiresAcknowledgement && !this.acknowledgeCheckboxEl.checked);
     this.signOutButton.disabled = isBusy;
     this.refreshButton.disabled = isBusy;
     this.backButton.disabled = isBusy;
     this.createApiKeyLink.style.pointerEvents = isBusy ? 'none' : 'auto';
     this.createApiKeyLink.style.opacity = isBusy ? '0.7' : '1';
+    this.disclaimerEl.hidden = this.authState === 'logged-in' || this.authState === 'logging-out';
+    this.acknowledgeLabelEl.hidden = this.disclaimerEl.hidden;
 
     this.syncMasterDetailVisibility();
 
@@ -726,6 +760,16 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     } else {
       this.createApiKeyLink.href = this.createApiKeyUrl;
     }
+  }
+
+  private syncHeaderActions(): void {
+    const showCreateApiKeyLink = this.authState === 'logged-in' && Boolean(this.createApiKeyUrl);
+    if (showCreateApiKeyLink) {
+      this.headerActionsEl.replaceChildren(this.createApiKeyLink, this.refreshButton, this.signOutButton);
+      return;
+    }
+
+    this.headerActionsEl.replaceChildren(this.refreshButton, this.signOutButton);
   }
 }
 

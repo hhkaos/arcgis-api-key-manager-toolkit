@@ -10,6 +10,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Core:** Disclaimer banner and acknowledgement checkbox in `<sign-in-view>`; sign-in button is disabled until the user acknowledges the "not an official Esri project" notice.
+
+- **VS Code:** Disclaimer banner and acknowledgement checkbox in the webview shell (visible only on the sign-in screen); moved "Create API key ↗" link management into a new `syncHeaderActions()` helper so the link is only rendered when the user is logged in.
+
+- **Chrome:** Disclaimer banner and acknowledgement checkbox in both the popup and the full-tab explorer; sign-in button disabled until acknowledged. Added `.disclaimer` and `.checkbox-field` CSS classes to `ui.css`.
+
+- **Docs:** Added "not an official Esri project" warning notice to README.
+
 - **Core:** `isDeleteProtected` and `isFavorite` fields on `ApiKeyCredential`; `fetchCredentialDetail()` now populates both by fetching `/portals/self` (for `favGroupId`) and querying `/search` to check favorite group membership.
 - **Core:** `toggleItemDeleteProtection()`, `canDeleteCredential()`, `deleteCredential()`, and `toggleCredentialFavorite()` REST methods; corresponding option interfaces and `ArcGisRestClient` entries in `types.ts`.
 - **Core:** Protocol messages for delete and favorite flows — `webview/toggle-credential-delete-protection`, `webview/toggle-credential-favorite`, `webview/check-credential-delete`, `webview/delete-credential` (webview→host); `host/credential-delete-check-result`, `host/credential-deleted` (host→webview).
