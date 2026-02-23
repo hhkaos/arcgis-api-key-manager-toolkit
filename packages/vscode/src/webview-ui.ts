@@ -2,6 +2,8 @@ import {
   deserializeMessage,
   serializeMessage,
   type ApiKeyCredential,
+  type EnvironmentConfig,
+  type EnvironmentType,
   type HostToWebviewMessage,
   type WebviewToHostMessage
 } from '@arcgis-api-keys/core';
@@ -31,6 +33,7 @@ type CredentialDetailElement = HTMLElement & {
   loading: boolean;
   errorMessage: string;
   portalBase: string;
+  environmentType: EnvironmentType | null;
   availableTags: string[];
 };
 
@@ -69,6 +72,8 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   private selectedCredentialId: string | null = null;
   private selectedCredential: ApiKeyCredential | null = null;
   private detailMode: boolean = false;
+  private environments: EnvironmentConfig[] = [];
+  private activeEnvironmentId: string | null = null;
 
   public connectedCallback(): void {
     this.render();
@@ -317,6 +322,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
     this.detailEl.portalBase = '';
+    this.detailEl.environmentType = null;
     this.detailEl.availableTags = [];
     this.detailEl.style.display = 'none';
 
@@ -347,7 +353,11 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   public handleHostMessage(message: HostToWebviewMessage): void {
     if (message.type === 'host/state') {
       this.clearError();
+      this.environments = message.payload.environments;
+      this.activeEnvironmentId = message.payload.activeEnvironmentId;
       this.authState = message.payload.signedIn ? 'logged-in' : 'logged-out';
+      const activeEnv = this.environments.find((e) => e.id === this.activeEnvironmentId);
+      this.detailEl.environmentType = activeEnv?.type ?? null;
       this.syncUiState();
 
       if (message.payload.signedIn) {
@@ -525,6 +535,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
     this.detailEl.portalBase = '';
+    this.detailEl.environmentType = null;
     this.detailEl.availableTags = [];
 
     this.modalEl.open = false;

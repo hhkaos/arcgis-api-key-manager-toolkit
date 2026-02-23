@@ -23,6 +23,7 @@ interface CredentialDetailElement extends HTMLElement {
   loading: boolean;
   errorMessage: string;
   portalBase: string;
+  environmentType: EnvironmentConfig['type'] | null;
   availableTags: string[];
 }
 
@@ -315,6 +316,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
     this.detailEl.portalBase = '';
+    this.detailEl.environmentType = null;
     this.detailEl.availableTags = [];
     this.detailEl.style.display = 'none';
 
@@ -372,6 +374,8 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.environments = message.payload.environments;
       this.activeEnvironmentId = message.payload.activeEnvironmentId;
       this.syncEnvironmentOptions();
+      const activeEnv = this.environments.find((e) => e.id === this.activeEnvironmentId);
+      this.detailEl.environmentType = activeEnv?.type ?? null;
 
       this.authState = message.payload.signedIn ? 'logged-in' : 'logged-out';
       this.syncUiState();
@@ -576,6 +580,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.detailEl.loading = false;
     this.detailEl.errorMessage = '';
     this.detailEl.portalBase = '';
+    this.detailEl.environmentType = null;
     this.detailEl.availableTags = [];
 
     this.modalEl.open = false;

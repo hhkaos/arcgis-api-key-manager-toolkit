@@ -10,7 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- **Core:** Inline referrer restrictions editor in `<credential-detail>` — "Edit referrers" button reveals an add/edit/delete form with per-row validation annotations and a collapsible instructions panel; dispatches `credential-referrers-update-request` event on save.
+- **Core:** `environmentType` property on `<credential-detail>` — renders an environment-specific "View privilege reference ↗" link (ArcGIS Online, Location Platform, or Enterprise docs) in the Privileges section.
+- **Core:** "Instructions" toggle button in the inline referrer editor replaces the `<details>` collapsible panel; added `button.secondary` and `button.full-width` CSS utility classes.
+- **Core:** Inline referrer restrictions editor in `<credential-detail>` — "Edit referrers" button reveals an add/edit/delete form with per-row validation annotations; dispatches `credential-referrers-update-request` event on save.
 - **Core:** `updateCredentialReferrers()` REST method — looks up item owner and registered app info, then PATCH-updates the app's `httpReferrers` via `/oauth2/apps/{clientId}/update` while preserving existing `redirect_uris` and `privileges`.
 - **Core:** `webview/update-credential-referrers` webview→host protocol message; response reuses `host/credential-metadata-updated`.
 - **Core:** `snippet` field on `ApiKeyCredential` model; populated from the `/content/items/{id}/groups` response during `fetchCredentialDetail()`.
@@ -20,14 +22,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Core:** Inline editing for title, snippet, and tags in `<credential-list>` rows; credential rows converted from `<button>` to `<div role="button">` to allow nested interactive controls.
 - **Core:** `webview/fetch-user-tags` and `webview/update-credential-metadata` webview→host protocol messages; `host/user-tags` and `host/credential-metadata-updated` host→webview messages.
 
+- **VS Code:** Propagates active environment type to `<credential-detail>` via `environmentType` on `host/state` message handling.
 - **VS Code:** `updateCredentialReferrersForEnvironment()` handler — calls `updateCredentialReferrers()`, re-fetches the updated credential, and posts `host/credential-metadata-updated` back to the webview.
 - **VS Code:** `fetchUserTagsForEnvironment()` handler posts available tags to the webview on demand.
 - **VS Code:** `updateCredentialMetadataForEnvironment()` handler — calls `updateItemMetadata()`, re-fetches the updated credential, and posts `host/credential-metadata-updated` back to the webview.
 
+- **Chrome:** Propagates active environment type to `<credential-detail>` on `state` message handling.
 - **Chrome:** Wired `fetch-user-tags`, `credential-update-request`, and `credential-referrers-update-request` event listeners in explorer; added `webview/fetch-user-tags`, `webview/update-credential-metadata`, and `webview/update-credential-referrers` cases in service worker.
 
 ### Changed
 
+- **Core:** Reordered `<credential-detail>` sections — API Key Slots first, Privileges second, Referrer Restrictions third, Metadata last.
+- **Core:** "Edit referrers" button moved below the referrer list and changed to full-width.
 - **Core:** `<credential-list>` column sizing extracted to `--akm-credential-columns` CSS custom property and `box-sizing: border-box` applied to header/row for consistent layout.
 - **Core:** `filterCredentials()` search now also matches against partial API key IDs (e.g. `AT1_a1b2c3d4`).
 - **Core:** `<credential-list>` search label updated to "Search" with an info tooltip listing supported fields: Name, Referrer, or Partial API Key.

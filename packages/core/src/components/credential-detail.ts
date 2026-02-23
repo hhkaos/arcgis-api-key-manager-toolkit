@@ -1,6 +1,6 @@
 import { LitElement, css, html } from 'lit';
 import { analyzeReferrers } from '../logic/referrers.js';
-import type { ApiKeyCredential, KeySlotStatus } from '../types/models.js';
+import type { ApiKeyCredential, EnvironmentType, KeySlotStatus } from '../types/models.js';
 import './expiration-badge.js';
 
 export interface KeyActionRequestDetail {
@@ -29,6 +29,7 @@ export class CredentialDetailElement extends LitElement {
     loading: { type: Boolean },
     errorMessage: { type: String, attribute: 'error-message' },
     portalBase: { type: String, attribute: 'portal-base' },
+    environmentType: { type: String, attribute: 'environment-type' },
     availableTags: { attribute: false },
     _editingField: { state: true },
     _editTitle: { state: true },
@@ -39,7 +40,8 @@ export class CredentialDetailElement extends LitElement {
     _saving: { state: true },
     _editingReferrers: { state: true },
     _editReferrers: { state: true },
-    _savingReferrers: { state: true }
+    _savingReferrers: { state: true },
+    _showReferrerInstructions: { state: true }
   };
 
   public static override styles = css`
@@ -163,6 +165,8 @@ export class CredentialDetailElement extends LitElement {
     .referrer.warn { border-color: var(--vscode-editorWarning-foreground, #8a4b00); }
 
     .note { color: var(--akm-muted); font-size: 11px; }
+    .note a { color: var(--vscode-textLink-foreground); }
+    .note a:hover { color: var(--vscode-textLink-activeForeground); }
 
     .warning {
       color: var(--vscode-editorWarning-foreground, #8a4b00);
@@ -467,9 +471,18 @@ export class CredentialDetailElement extends LitElement {
       border-color: var(--vscode-errorForeground, #b42318);
       background: transparent;
       color: var(--vscode-errorForeground, #b42318);
-      min-height: 29px;
-      padding: 4px 8px;
-      font-size: 11px;
+    }
+
+    button.secondary {
+      border-color: var(--akm-border);
+      background: transparent;
+      color: var(--akm-muted);
+      font-weight: 400;
+    }
+
+    button.full-width {
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .referrer-controls {
@@ -484,6 +497,7 @@ export class CredentialDetailElement extends LitElement {
   public loading: boolean = false;
   public errorMessage: string = '';
   public portalBase: string = '';
+  public environmentType: EnvironmentType | null = null;
   public availableTags: string[] = [];
 
   private _editingField: EditingField = null;
@@ -496,6 +510,7 @@ export class CredentialDetailElement extends LitElement {
   private _editingReferrers: boolean = false;
   private _editReferrers: string[] = [];
   private _savingReferrers: boolean = false;
+  private _showReferrerInstructions: boolean = false;
   private _cancelRequested: boolean = false;
 
   public override updated(changedProperties: Map<string, unknown>): void {
@@ -534,6 +549,14 @@ export class CredentialDetailElement extends LitElement {
       ? `${this.portalBase}/home/item.html?id=${this.credential.id}#settings`
       : '';
 
+    const privilegesDocUrl = this.environmentType === 'online'
+      ? 'https://developers.arcgis.com/documentation/security-and-authentication/reference/privileges/online/'
+      : this.environmentType === 'location-platform'
+        ? 'https://developers.arcgis.com/documentation/security-and-authentication/reference/privileges/location-platform/'
+        : this.environmentType === 'enterprise'
+          ? 'https://developers.arcgis.com/documentation/security-and-authentication/reference/privileges/enterprise/'
+          : null;
+
     return html`
       <section class="panel">
         <div class="header-row">
@@ -550,6 +573,65 @@ export class CredentialDetailElement extends LitElement {
                 title="Open API Key settings in ArcGIS"
               >Open API Key settings in ArcGIS ↗</a>`
             : null}
+        </div>
+
+        <div class="section">
+          <h3>API Key Slots</h3>
+          ${this.credential.isLegacy
+            ? html`<div class="chip-list"><span class="chip">Legacy API key</span></div>`
+            : html`<div class="slot-grid">
+                ${this.renderSlotCard(this.credential.key1)}
+                ${this.renderSlotCard(this.credential.key2)}
+              </div>`}
+        </div>
+
+        <div class="section">
+          <h3>Privileges</h3>
+          ${this.credential.privileges.length === 0
+            ? html`<div class="empty">No privileges available.</div>`
+            : html`<div class="chip-list">
+                ${this.credential.privileges.map(
+                  (p) => html`<span class="chip" title=${p}>${p}</span>`
+                )}
+              </div>`}
+          ${privilegesDocUrl
+            ? html`<div class="note">
+                <a
+                  href="${privilegesDocUrl}#list-of-privileges"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >View privilege reference ↗</a>
+              </div>`
+            : null}
+        </div>
+
+        <div class="section">
+          <h3>Referrer Restrictions</h3>
+          ${this._editingReferrers
+            ? this.renderReferrerEditor()
+            : html`
+                ${referrerAnnotations.length === 0
+                  ? html`<div class="empty">No referrer restrictions configured.</div>`
+                  : referrerAnnotations.map(
+                      (a) => html`
+                        <div class="referrer ${a.warning ? 'warn' : ''}">
+                          <div>
+                            <div class="value">${a.value}</div>
+                            <div class="note">${this.getReferrerReason(a.reason)}</div>
+                          </div>
+                          ${a.warning ? html`<span class="warning">Review</span>` : null}
+                        </div>
+                      `
+                    )}
+                <div class="referrer-controls">
+                  <button
+                    type="button"
+                    class="full-width"
+                    @click=${this.startReferrerEdit}
+                    ?disabled=${this.loading}
+                  >✎ Edit referrers</button>
+                </div>
+              `}
         </div>
 
         <div class="section">
@@ -579,68 +661,6 @@ export class CredentialDetailElement extends LitElement {
               ${this.renderTagsField()}
             </div>
           </div>
-        </div>
-
-        <div class="section">
-          <h3>Privileges</h3>
-          ${this.credential.privileges.length === 0
-            ? html`<div class="empty">No privileges available.</div>`
-            : html`<div class="chip-list">
-                ${this.credential.privileges.map(
-                  (p) => html`<span class="chip" title=${p}>${p}</span>`
-                )}
-              </div>`}
-        </div>
-
-        <div class="section">
-          <h3>Referrer Restrictions</h3>
-          <details class="collapsible-help">
-            <summary>Instructions</summary>
-            <p>
-              Allow access from specific HTTP/HTTPS domains. The value of the HTTP referrer header must match.
-              You can use * as a wildcard. See
-              <a
-                href="https://developers.arcgis.com/documentation/security-and-authentication/api-key-authentication/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >Security and authentication</a>
-              for details. Updating referrers invalidates current keys and requires key regeneration.
-            </p>
-          </details>
-          ${this._editingReferrers
-            ? this.renderReferrerEditor()
-            : html`
-                <div class="referrer-controls">
-                  <button
-                    type="button"
-                    @click=${this.startReferrerEdit}
-                    ?disabled=${this.loading}
-                  >✎ Edit referrers</button>
-                </div>
-                ${referrerAnnotations.length === 0
-                  ? html`<div class="empty">No referrer restrictions configured.</div>`
-                  : referrerAnnotations.map(
-                      (a) => html`
-                        <div class="referrer ${a.warning ? 'warn' : ''}">
-                          <div>
-                            <div class="value">${a.value}</div>
-                            <div class="note">${this.getReferrerReason(a.reason)}</div>
-                          </div>
-                          ${a.warning ? html`<span class="warning">Review</span>` : null}
-                        </div>
-                      `
-                    )}
-              `}
-        </div>
-
-        <div class="section">
-          <h3>API Key Slots</h3>
-          ${this.credential.isLegacy
-            ? html`<div class="chip-list"><span class="chip">Legacy API key</span></div>`
-            : html`<div class="slot-grid">
-                ${this.renderSlotCard(this.credential.key1)}
-                ${this.renderSlotCard(this.credential.key2)}
-              </div>`}
         </div>
       </section>
     `;
@@ -922,6 +942,20 @@ export class CredentialDetailElement extends LitElement {
           `;
         })}
       </div>
+      ${this._showReferrerInstructions
+        ? html`<div class="collapsible-help">
+            <p>
+              Allow access from specific HTTP/HTTPS domains. The value of the HTTP referrer header must match.
+              You can use * as a wildcard. See
+              <a
+                href="https://developers.arcgis.com/documentation/security-and-authentication/api-key-authentication/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Security and authentication</a>
+              for details. Updating referrers invalidates current keys and requires key regeneration.
+            </p>
+          </div>`
+        : null}
       <div class="referrer-controls">
         <button
           type="button"
@@ -930,19 +964,28 @@ export class CredentialDetailElement extends LitElement {
         >+ Add</button>
         <button
           type="button"
-          class="confirm-save"
+          class="secondary"
+          @click=${this._toggleReferrerInstructions}
+          ?disabled=${this._savingReferrers}
+        >Instructions</button>
+        <button
+          type="button"
           @click=${this.saveReferrers}
           ?disabled=${this._savingReferrers}
         >${this._savingReferrers ? '...' : 'Save referrers'}</button>
         <button
           type="button"
-          class="confirm-cancel"
+          class="secondary"
           @click=${this.cancelReferrerEdit}
           ?disabled=${this._savingReferrers}
         >Cancel</button>
       </div>
     `;
   }
+
+  private _toggleReferrerInstructions = (): void => {
+    this._showReferrerInstructions = !this._showReferrerInstructions;
+  };
 
   private startReferrerEdit = (): void => {
     if (!this.credential) return;
