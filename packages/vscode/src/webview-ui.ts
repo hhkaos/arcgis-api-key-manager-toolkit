@@ -26,6 +26,7 @@ type CredentialListElement = HTMLElement & {
   loading: boolean;
   errorMessage: string;
   portalBase: string;
+  environmentType: EnvironmentType | null;
   availableTags: string[];
 };
 
@@ -430,6 +431,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.credentialsEl.selectedCredentialId = null;
     this.credentialsEl.loading = false;
     this.credentialsEl.errorMessage = '';
+    this.credentialsEl.environmentType = null;
     this.credentialsEl.availableTags = [];
     this.credentialsEl.style.display = '';
 
@@ -479,6 +481,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.authState = message.payload.signedIn ? 'logged-in' : 'logged-out';
       const activeEnv = this.environments.find((e) => e.id === this.activeEnvironmentId);
       this.detailEl.environmentType = activeEnv?.type ?? null;
+      this.credentialsEl.environmentType = activeEnv?.type ?? null;
       this.syncUiState();
 
       if (message.payload.signedIn) {
@@ -691,6 +694,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.credentialsEl.selectedCredentialId = null;
     this.credentialsEl.loading = false;
     this.credentialsEl.errorMessage = '';
+    this.credentialsEl.environmentType = null;
     this.credentialsEl.availableTags = [];
 
     this.detailEl.credential = null;

@@ -766,6 +766,14 @@ export class CredentialDetailElement extends LitElement {
             ${this.renderSnippetField()}
           </div>
           <div class="header-actions">
+            ${this.environmentType === 'location-platform'
+              ? html`<a
+                  class="primary-action"
+                  href="https://location.arcgis.com/usage/credentials/${this.credential.id}/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                ><akm-icon name="chart-line" size="12" label="View usage"></akm-icon> View Usage</a>`
+              : null}
             ${openInPortalHref
               ? html`<a
                   class="primary-action"

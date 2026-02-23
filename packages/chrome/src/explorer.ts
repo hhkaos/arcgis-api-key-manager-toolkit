@@ -3,6 +3,7 @@ import {
   serializeMessage,
   type ApiKeyCredential,
   type EnvironmentConfig,
+  type EnvironmentType,
   type HostToWebviewMessage,
   type WebviewToHostMessage
 } from '@arcgis-api-keys/core';
@@ -16,6 +17,7 @@ interface CredentialListElement extends HTMLElement {
   loading: boolean;
   errorMessage: string;
   portalBase: string;
+  environmentType: EnvironmentType | null;
   availableTags: string[];
 }
 
@@ -422,6 +424,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.credentialsEl.selectedCredentialId = null;
     this.credentialsEl.loading = false;
     this.credentialsEl.errorMessage = '';
+    this.credentialsEl.environmentType = null;
     this.credentialsEl.availableTags = [];
     this.credentialsEl.style.display = '';
 
@@ -489,6 +492,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.syncEnvironmentOptions();
       const activeEnv = this.environments.find((e) => e.id === this.activeEnvironmentId);
       this.detailEl.environmentType = activeEnv?.type ?? null;
+      this.credentialsEl.environmentType = activeEnv?.type ?? null;
 
       this.authState = message.payload.signedIn ? 'logged-in' : 'logged-out';
       this.syncUiState();
@@ -732,6 +736,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.credentialsEl.selectedCredentialId = null;
     this.credentialsEl.loading = false;
     this.credentialsEl.errorMessage = '';
+    this.credentialsEl.environmentType = null;
     this.credentialsEl.availableTags = [];
 
     this.detailEl.credential = null;

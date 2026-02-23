@@ -10,6 +10,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Core:** `environmentType` property on `<credential-list>` — renders a `chart-line` usage icon column linked to `https://location.arcgis.com/usage/credentials/{id}/` for each row when environment type is `location-platform`; added "View Usage" link in `<credential-detail>` header for Location Platform environments; added `chart-line` icon to `<akm-icon>`.
+
+- **VS Code:** Propagated `environmentType` to `<credential-list>` on credential load and clear.
+
+- **Chrome:** Propagated `environmentType` to `<credential-list>` on credential load and clear.
+
 - **Core:** New `<akm-icon>` Lit web component backed by Font Awesome SVG icons (`@fortawesome/fontawesome-svg-core`, `@fortawesome/free-solid-svg-icons`); exported from `@arcgis-api-keys/core/components`.
 
 - **VS Code:** `shouldShowSignInDisclaimer()` utility extracted to `ui-state.ts`; added `setInlineControlVisibility()` / `setFlexControlVisibility()` helpers for proper `inline-flex` / `flex` layout when icons are nested in buttons and banners.

@@ -5,6 +5,7 @@ import type {
   ApiKeyCredential,
   CredentialFilter,
   CredentialSort,
+  EnvironmentType,
   ExpirationCategory
 } from '../types/models.js';
 import './expiration-badge.js';
@@ -37,6 +38,7 @@ export class CredentialListElement extends LitElement {
     loading: { type: Boolean },
     errorMessage: { type: String, attribute: 'error-message' },
     portalBase: { type: String, attribute: 'portal-base' },
+    environmentType: { type: String, attribute: 'environment-type' },
     availableTags: { attribute: false },
     searchText: { state: true },
     searchDraft: { state: true },
@@ -67,7 +69,7 @@ export class CredentialListElement extends LitElement {
       --akm-focus: var(--vscode-focusBorder, #8fbef5);
       --akm-hover: var(--vscode-list-hoverBackground, #f1f6fb);
       --akm-selected: var(--vscode-list-activeSelectionBackground, #dceeff);
-      --akm-credential-columns: minmax(220px, 2.8fr) minmax(220px, 1.6fr) minmax(120px, 0.9fr) 28px 40px;
+      --akm-credential-columns: minmax(220px, 2.8fr) minmax(220px, 1.6fr) minmax(120px, 0.9fr) 28px 28px 40px;
       font-family: var(--akm-font);
       color: var(--akm-text);
     }
@@ -352,6 +354,12 @@ export class CredentialListElement extends LitElement {
       text-align: center;
     }
 
+    .usage-col,
+    .usage-cell {
+      justify-self: center;
+      text-align: center;
+    }
+
     .item-col,
     .item-cell {
       justify-self: center;
@@ -510,6 +518,7 @@ export class CredentialListElement extends LitElement {
   public loading: boolean = false;
   public errorMessage: string = '';
   public portalBase: string = '';
+  public environmentType: EnvironmentType | null = null;
   public availableTags: string[] = [];
 
   private searchText: string = '';
@@ -629,6 +638,7 @@ export class CredentialListElement extends LitElement {
                     <span class="col-heading keys-col">Keys</span>
                     <span class="col-heading details-col">Details</span>
                     <span class="col-heading fav-col"><akm-icon name="star" size="11" label="Favorite"></akm-icon></span>
+                    <span class="col-heading usage-col">${this.environmentType === 'location-platform' ? html`<akm-icon name="chart-line" size="11" label="Usage"></akm-icon>` : null}</span>
                     <span class="col-heading item-col">Item</span>
                   </div>
                   ${filteredCredentials.map((credential) => this.renderRow(credential))}
@@ -678,6 +688,17 @@ export class CredentialListElement extends LitElement {
           <span class="${credential.isFavorite ? 'star-fav' : 'star-unfav'}">
             <akm-icon name="star" size="13" label="${credential.isFavorite ? 'Favorite' : 'Not favorite'}"></akm-icon>
           </span>
+        </div>
+        <div class="usage-cell">
+          ${this.environmentType === 'location-platform'
+            ? html`<a
+                class="settings-link"
+                href="https://location.arcgis.com/usage/credentials/${credential.id}/"
+                target="_blank"
+                title="View API key usage"
+                @click=${(e: Event) => e.stopPropagation()}
+              ><akm-icon name="chart-line" size="13" label="View API key usage"></akm-icon></a>`
+            : null}
         </div>
         <div class="item-cell">
           ${this.portalBase

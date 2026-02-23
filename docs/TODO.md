@@ -8,6 +8,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ## Done
 
+- [x] Add "View Usage" link in `<credential-list>` (icon column) and `<credential-detail>` header for Location Platform environments; propagate `environmentType` to `<credential-list>` in VS Code and Chrome - 2026-02-23
 - [x] Refine `<credential-list>` filtering UX with compact basic toolbar + collapsible advanced options; add favorites-only filter and favorite-star indicator column; add external-link icon affordance to credential detail “Open in Portal” link - 2026-02-23
 - [x] Replace all emoji/Unicode icon characters with `<akm-icon>` SVG component (Font Awesome) across all shared Lit components, VS Code webview shell, and Chrome explorer/popup; extract `shouldShowSignInDisclaimer()` to `ui-state.ts` in VS Code and Chrome - 2026-02-23
 - [x] Refine disclaimer text across all sign-in surfaces and complete acknowledgement checkbox gate in VS Code webview shell and Chrome full-tab explorer; sign-in button disabled until checkbox checked on both surfaces - 2026-02-23

@@ -5,6 +5,7 @@ import {
   faArrowUpRightFromSquare,
   faBook,
   faCheck,
+  faChartLine,
   faClipboard,
   faCircleInfo,
   faFloppyDisk,
@@ -27,6 +28,7 @@ type IconName =
   | 'alert-triangle'
   | 'arrow-left'
   | 'book'
+  | 'chart-line'
   | 'clipboard'
   | 'check'
   | 'external-link'
@@ -47,6 +49,7 @@ const ICONS = {
   'arrow-left': faArrowLeft,
   'arrow-right-from-bracket': faArrowRightFromBracket,
   book: faBook,
+  'chart-line': faChartLine,
   clipboard: faClipboard,
   check: faCheck,
   'external-link': faArrowUpRightFromSquare,
