@@ -120,7 +120,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.disclaimerEl.style.fontSize = '12px';
     this.disclaimerEl.style.lineHeight = '1.4';
     this.disclaimerEl.innerHTML =
-      '<akm-icon name="alert-triangle" size="14" label="Warning"></akm-icon><span>This is not an official Esri project or maintained by Esri, so <strong>use it at your own risk</strong>. It is an experimental side project made for fun and for personal use. If you still decide to use it, I would love to hear your opinion at <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">issues</a>.</span>';
+      '<akm-icon name="alert-triangle" size="14" label="Warning"></akm-icon><span>This is an experimental side project created for fun and personal use. It is not an official Esri project, so use it at your own risk. If you still decide to use it, you can report bugs or share any feedback at <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">the GitHub repo issues</a>.</span>';
 
     this.acknowledgeCheckboxEl.type = 'checkbox';
     this.acknowledgeCheckboxEl.style.margin = '2px 0 0 0';

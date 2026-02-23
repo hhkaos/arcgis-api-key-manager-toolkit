@@ -84,7 +84,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-- **All:** Updated disclaimer text across all sign-in surfaces to be shorter and more personal ("experimental side project made for personal use"); shortened the GitHub issues link to just "issues".
+- **All:** Updated disclaimer text across all sign-in surfaces to be shorter and more personal ("experimental side project created for fun and personal use"); shortened the GitHub issues link to just "issues".
 
 - **VS Code:** Completed acknowledgement checkbox gate in the webview shell (`webview-ui.ts`); sign-in button is now disabled until the user checks the "I have read the warning" checkbox (was missing from previous commit).
 

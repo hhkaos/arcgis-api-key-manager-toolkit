@@ -2,7 +2,7 @@
 
 ArcGIS API Key Explorer is a monorepo for a VS Code extension and Chrome extension that help developers securely manage their own ArcGIS API key credentials.
 
-> ⚠️ This is an open source side project made for fun. It is not an official Esri project, so use it at your own risk. It is maintained by the community. For bugs or ideas use https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues
+> ⚠️ This is an experimental side project created for fun and personal use. It is not an official Esri project, so use it at your own risk. If you still decide to use it, you can report bugs or share any feedback at https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues
 
 The project provides a shared core package for:
 
