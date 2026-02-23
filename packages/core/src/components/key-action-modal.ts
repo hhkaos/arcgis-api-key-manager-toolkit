@@ -1,4 +1,5 @@
 import { LitElement, css, html } from 'lit';
+import './icon.js';
 
 export interface KeyActionExecuteDetail {
   credentialId: string;
@@ -102,6 +103,9 @@ export class KeyActionModalElement extends LitElement {
     }
 
     .warning {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       border: 1px solid var(--vscode-editorWarning-foreground, #8a4b00);
       background: var(--akm-surface-raised);
       color: var(--vscode-editorWarning-foreground, #8a4b00);
@@ -171,6 +175,9 @@ export class KeyActionModalElement extends LitElement {
 
     .toast.ok {
       color: var(--vscode-editor-foreground, #18202a);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .toast.error {
@@ -275,7 +282,10 @@ export class KeyActionModalElement extends LitElement {
           <div class="row"><div class="label">Existing Created</div><div class="value">${this.existingCreated ? new Date(this.existingCreated).toLocaleString() : 'N/A'}</div></div>
         </div>
 
-        <div class="warning">⚠ ${warningText}</div>
+        <div class="warning">
+          <akm-icon name="alert-triangle" size="13"></akm-icon>
+          ${warningText}
+        </div>
 
         ${
           shouldShowExpirationInput
@@ -304,8 +314,13 @@ export class KeyActionModalElement extends LitElement {
                   <div class="label">${this.getResultLabel()}</div>
                   <textarea id="generated-key" readonly .value=${this.resultKey}></textarea>
                   <div class="copy-row">
-                    <button type="button" @click=${this.handleCopyKey}>Copy Key</button>
-                    ${this.copyState === 'copied' ? html`<span class="toast ok">✓ Copied!</span>` : null}
+                    <button type="button" @click=${this.handleCopyKey}>
+                      <akm-icon name="clipboard" size="12"></akm-icon>
+                      Copy Key
+                    </button>
+                    ${this.copyState === 'copied'
+                      ? html`<span class="toast ok"><akm-icon name="check" size="12"></akm-icon>Copied!</span>`
+                      : null}
                     ${
                       this.copyState === 'failed'
                         ? html`<span class="toast error">Clipboard unavailable. Key text selected for manual copy.</span>`

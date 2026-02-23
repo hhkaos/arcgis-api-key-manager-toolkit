@@ -9,5 +9,5 @@
     "sourceMap": false,
     "types": ["node"]
   },
-  "include": ["src/popup-state.ts", "src/runtime-types.ts", "test/**/*.ts"]
+  "include": ["src/popup-state.ts", "src/runtime-types.ts", "src/ui-state.ts", "test/**/*.ts"]
 }

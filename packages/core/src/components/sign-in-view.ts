@@ -1,4 +1,5 @@
 import { LitElement, css, html } from 'lit';
+import './icon.js';
 
 export class SignInViewElement extends LitElement {
   public static override properties = {
@@ -43,6 +44,9 @@ export class SignInViewElement extends LitElement {
     }
 
     .disclaimer {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
       border-left: 3px solid #d97706;
       padding-left: 8px;
       font-size: 12px;
@@ -101,9 +105,12 @@ export class SignInViewElement extends LitElement {
       <div class="card">
         <p>Sign in to load your API key credentials for the active environment.</p>
         <p class="disclaimer">
-          ⚠️ This is an open source side project made for fun. It is not an official Esri project, so <strong>use it at your own risk</strong>. It is maintained by the community.<br /><br />
-          This is an experimental side project made for personal use. If anyone tries it or likes it, I would love to hear their feedback in the
-          <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">issues</a>.
+          <akm-icon name="alert-triangle" size="14" label="Warning"></akm-icon>
+          <span>
+            This is an open source side project made for fun. It is not an official Esri project, so <strong>use it at your own risk</strong>. It is maintained by the community.<br /><br />
+            This is an experimental side project made for personal use. If anyone tries it or likes it, I would love to hear their feedback in the
+            <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">issues</a>.
+          </span>
         </p>
         <label class="acknowledge">
           <input type="checkbox" .checked=${this.acknowledged} @change=${this.handleAcknowledgementChange} />

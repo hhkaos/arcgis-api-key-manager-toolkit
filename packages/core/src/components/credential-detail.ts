@@ -2,6 +2,7 @@ import { LitElement, css, html } from 'lit';
 import { analyzeReferrers } from '../logic/referrers.js';
 import type { ApiKeyCredential, EnvironmentType, KeySlotStatus } from '../types/models.js';
 import './expiration-badge.js';
+import './icon.js';
 
 export interface KeyActionRequestDetail {
   credentialId: string;
@@ -178,6 +179,9 @@ export class CredentialDetailElement extends LitElement {
     .section-links a {
       color: var(--vscode-textLink-foreground, var(--akm-primary));
       text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
     .section-links a:hover {
       color: var(--vscode-textLink-activeForeground, var(--akm-primary));
@@ -328,14 +332,17 @@ export class CredentialDetailElement extends LitElement {
 
     .pencil-btn {
       opacity: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       background: none;
       border: none;
       cursor: pointer;
       color: var(--akm-muted);
-      font-size: 11px;
-      padding: 1px 4px;
+      padding: 0;
       min-height: unset;
-      width: auto;
+      width: 14px;
+      height: 14px;
       flex-shrink: 0;
       line-height: 1;
       font-weight: 400;
@@ -430,11 +437,10 @@ export class CredentialDetailElement extends LitElement {
       border: none;
       color: var(--akm-muted);
       cursor: pointer;
-      font-size: 14px;
       line-height: 1;
       min-height: unset;
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -776,8 +782,8 @@ export class CredentialDetailElement extends LitElement {
             >${this._updatingFavorite
                 ? '...'
                 : this.credential.isFavorite
-                  ? 'Remove from favorite'
-                  : 'Mark as Favorite'}</button>
+                  ? html`<akm-icon name="x" size="12"></akm-icon> Remove from favorite`
+                  : html`<akm-icon name="check" size="12"></akm-icon> Mark as Favorite`}</button>
           </div>
         </div>
 
@@ -819,14 +825,14 @@ export class CredentialDetailElement extends LitElement {
                     href="${settingsHref}"
                     target="_blank"
                     rel="noopener noreferrer"
-                  >Edit ↗</a>`
+                  >Edit <akm-icon name="external-link" size="12" label="Open settings"></akm-icon></a>`
                 : null}
               ${privilegesDocUrl
                 ? html`<a
                     href="${privilegesDocUrl}#list-of-privileges"
                     target="_blank"
                     rel="noopener noreferrer"
-                  >View privilege reference ↗</a>`
+                  >View privilege reference <akm-icon name="external-link" size="12" label="Open reference"></akm-icon></a>`
                 : null}
             </div>
           </div>
@@ -863,7 +869,7 @@ export class CredentialDetailElement extends LitElement {
                     class="full-width"
                     @click=${this.startReferrerEdit}
                     ?disabled=${this.loading}
-                  >✎ Edit referrers</button>
+                  ><akm-icon name="pencil" size="12"></akm-icon> Edit referrers</button>
                 </div>
               `}
         </div>
@@ -902,7 +908,9 @@ export class CredentialDetailElement extends LitElement {
           class="danger full-width"
           @click=${this.requestDeleteCheck}
           ?disabled=${this.loading || this._deleteCheckInFlight || this._deleteInFlight}
-        >${this._deleteCheckInFlight ? 'Checking...' : 'Delete item (API key)'}</button>
+        >${this._deleteCheckInFlight
+            ? 'Checking...'
+            : html`<akm-icon name="trash" size="12"></akm-icon> Delete item (API key)`}</button>
       </section>
       ${this.renderDeleteModal()}
     `;
@@ -939,7 +947,7 @@ export class CredentialDetailElement extends LitElement {
           title="Edit title"
           @click=${() => this.startEdit('title')}
           ?disabled=${this.loading}
-        >✎</button>
+        ><akm-icon name="pencil" size="12" label="Edit title"></akm-icon></button>
       </div>
     `;
   }
@@ -977,7 +985,7 @@ export class CredentialDetailElement extends LitElement {
             title="Edit snippet"
             @click=${() => this.startEdit('snippet')}
             ?disabled=${this.loading}
-          >✎</button>
+          ><akm-icon name="pencil" size="12" label="Edit snippet"></akm-icon></button>
         </div>
       `;
     }
@@ -991,7 +999,7 @@ export class CredentialDetailElement extends LitElement {
           title="Add snippet"
           @click=${() => this.startEdit('snippet')}
           ?disabled=${this.loading}
-        >✎</button>
+        ><akm-icon name="pencil" size="12" label="Add snippet"></akm-icon></button>
       </div>
     `;
   }
@@ -1017,7 +1025,7 @@ export class CredentialDetailElement extends LitElement {
           title="Edit tags"
           @click=${() => this.startEdit('tags')}
           ?disabled=${this.loading}
-        >✎</button>
+        ><akm-icon name="pencil" size="12" label="Edit tags"></akm-icon></button>
       </div>
     `;
   }
@@ -1030,13 +1038,13 @@ export class CredentialDetailElement extends LitElement {
           class="confirm-save"
           @click=${() => { this.saveCurrentField(); }}
           ?disabled=${this._saving}
-        >${this._saving ? '...' : '✓ Save'}</button>
+        >${this._saving ? '...' : html`<akm-icon name="check" size="12"></akm-icon> Save`}</button>
         <button
           type="button"
           class="confirm-cancel"
           @mousedown=${() => { this._cancelRequested = true; }}
           @click=${() => { this.cancelEdit(); }}
-        >✕ Cancel</button>
+        ><akm-icon name="x" size="12"></akm-icon> Cancel</button>
       </div>
     `;
   }
@@ -1054,7 +1062,7 @@ export class CredentialDetailElement extends LitElement {
                   class="chip-remove"
                   @click=${() => { this.removeTag(tag); }}
                   title="Remove tag"
-                >×</button>
+                ><akm-icon name="x" size="11" label="Remove tag"></akm-icon></button>
               </span>
             `
           )}
@@ -1114,10 +1122,11 @@ export class CredentialDetailElement extends LitElement {
   private renderSlotCard(slot: KeySlotStatus) {
     const action = slot.exists ? 'regenerate' : 'create';
     const buttonText = slot.exists
-      ? `↺ Regenerate API key ${slot.slot}`
+      ? `Regenerate API key ${slot.slot}`
       : slot.slot === 1
-        ? '+ Generate a primary API key'
-        : '+ Generate a secondary API key';
+        ? 'Generate a primary API key'
+        : 'Generate a secondary API key';
+    const actionIcon = slot.exists ? 'rotate-ccw' : 'plus';
 
     return html`
       <div class="slot-card">
@@ -1138,13 +1147,13 @@ export class CredentialDetailElement extends LitElement {
             class=${action}
             @click=${() => this.requestKeyAction(slot.slot, action)}
             ?disabled=${this.loading}
-          >${buttonText}</button>
+          ><akm-icon name=${actionIcon} size="12"></akm-icon> ${buttonText}</button>
           <button
             type="button"
             class="revoke"
             @click=${() => this.requestKeyAction(slot.slot, 'revoke')}
             ?disabled=${this.loading || !slot.exists}
-          >✕ Revoke API key ${slot.slot}</button>
+          ><akm-icon name="x" size="12"></akm-icon> Revoke API key ${slot.slot}</button>
         </div>
       </div>
     `;
@@ -1175,7 +1184,7 @@ export class CredentialDetailElement extends LitElement {
                   class="referrer-delete"
                   @click=${() => this.removeReferrer(index)}
                   ?disabled=${this._savingReferrers}
-                >Delete</button>
+                ><akm-icon name="trash" size="12"></akm-icon> Delete</button>
               </div>
               ${annotation
                 ? html`<div class="note">${this.getReferrerReason(annotation.reason)}</div>`
@@ -1203,24 +1212,26 @@ export class CredentialDetailElement extends LitElement {
           type="button"
           @click=${this.addReferrer}
           ?disabled=${this._savingReferrers}
-        >+ Add</button>
+        ><akm-icon name="plus" size="12"></akm-icon> Add</button>
         <button
           type="button"
           class="secondary"
           @click=${this._toggleReferrerInstructions}
           ?disabled=${this._savingReferrers}
-        >Instructions</button>
+        >${this._showReferrerInstructions
+            ? html`<akm-icon name="x" size="12"></akm-icon> Hide Instructions`
+            : html`<akm-icon name="book" size="12"></akm-icon> Instructions`}</button>
         <button
           type="button"
           @click=${this.saveReferrers}
           ?disabled=${this._savingReferrers}
-        >${this._savingReferrers ? '...' : 'Save referrers'}</button>
+        >${this._savingReferrers ? '...' : html`<akm-icon name="check" size="12"></akm-icon> Save referrers`}</button>
         <button
           type="button"
           class="secondary"
           @click=${this.cancelReferrerEdit}
           ?disabled=${this._savingReferrers}
-        >Cancel</button>
+        ><akm-icon name="x" size="12"></akm-icon> Cancel</button>
       </div>
     `;
   }

@@ -8,6 +8,7 @@ import {
 } from '@arcgis-api-keys/core';
 import '@arcgis-api-keys/core/components';
 import { CHROME_MESSAGE_SCOPE, isChromePushMessage, isHostMessage } from './runtime-types.js';
+import { shouldShowSignInDisclaimer } from './ui-state.js';
 
 interface CredentialListElement extends HTMLElement {
   credentials: ApiKeyCredential[];
@@ -110,11 +111,14 @@ class ArcgisApiKeysAppElement extends HTMLElement {
 
     this.disclaimerEl.style.margin = '0';
     this.disclaimerEl.style.padding = '8px';
+    this.disclaimerEl.style.display = 'flex';
+    this.disclaimerEl.style.alignItems = 'flex-start';
+    this.disclaimerEl.style.gap = '6px';
     this.disclaimerEl.style.borderLeft = '3px solid #d97706';
     this.disclaimerEl.style.fontSize = '12px';
     this.disclaimerEl.style.lineHeight = '1.4';
     this.disclaimerEl.innerHTML =
-      '⚠️ This is not an official Esri project or maintained by Esri, so <strong>use it at your own risk</strong>. It is an experimental side project made for fun and for personal use. If you still decide to use it, I would love to hear your opinion at <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">issues</a>.';
+      '<akm-icon name="alert-triangle" size="14" label="Warning"></akm-icon><span>This is not an official Esri project or maintained by Esri, so <strong>use it at your own risk</strong>. It is an experimental side project made for fun and for personal use. If you still decide to use it, I would love to hear your opinion at <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">issues</a>.</span>';
 
     this.acknowledgeCheckboxEl.type = 'checkbox';
     this.acknowledgeCheckboxEl.style.margin = '2px 0 0 0';
@@ -160,7 +164,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.actionsEl.style.gap = '8px';
     this.actionsEl.style.flexWrap = 'wrap';
 
-    setupPrimaryLink(this.createApiKeyLink, 'Create API key ↗');
+    setupPrimaryLink(this.createApiKeyLink, 'Create API key', 'external-link', 'end');
     this.environmentSelectEl.style.minWidth = '260px';
     this.environmentSelectEl.addEventListener('change', () => {
       const environmentId = this.environmentSelectEl.value;
@@ -174,10 +178,10 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       });
     });
 
-    setupButton(this.signInButton, 'Sign in with ArcGIS');
-    setupButton(this.signOutButton, 'Sign out');
-    setupButton(this.refreshButton, 'Refresh Credentials');
-    setupButton(this.backButton, '← Back to List');
+    setupButton(this.signInButton, 'Sign in with ArcGIS', 'user');
+    setupButton(this.signOutButton, 'Sign out', 'arrow-right-from-bracket');
+    setupButton(this.refreshButton, 'Refresh Credentials', 'rotate-ccw');
+    setupButton(this.backButton, 'Back to List', 'arrow-left', 'start');
     this.backButton.style.background = '#0b63ce';
     this.backButton.style.color = '#ffffff';
     this.backButton.style.borderColor = '#0b63ce';
@@ -668,24 +672,30 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     const isBusy =
       this.authState === 'checking' || this.authState === 'logging-in' || this.authState === 'logging-out';
 
-    this.signInButton.hidden = !(this.authState === 'logged-out' || this.authState === 'logging-in');
-    this.signOutButton.hidden = !(this.authState === 'logged-in' || this.authState === 'logging-out');
-    this.refreshButton.hidden = this.authState !== 'logged-in';
-    this.backButton.hidden = this.authState !== 'logged-in' || !this.detailMode;
-    this.createApiKeyLink.hidden = this.authState !== 'logged-in' || !this.createApiKeyUrl;
+    const showSignInButton = this.authState === 'logged-out' || this.authState === 'logging-in';
+    const showSignOutButton = this.authState === 'logged-in' || this.authState === 'logging-out';
+    const showRefreshButton = this.authState === 'logged-in';
+    const showBackButton = this.authState === 'logged-in' && this.detailMode;
+    const showCreateApiKeyLink = this.authState === 'logged-in' && Boolean(this.createApiKeyUrl);
 
-    this.signInButton.disabled = isBusy || !this.isWarningAcknowledged();
+    this.setInlineControlVisibility(this.signInButton, showSignInButton);
+    this.setInlineControlVisibility(this.signOutButton, showSignOutButton);
+    this.setInlineControlVisibility(this.refreshButton, showRefreshButton);
+    this.setInlineControlVisibility(this.backButton, showBackButton);
+    this.setInlineControlVisibility(this.createApiKeyLink, showCreateApiKeyLink);
+
+    const requiresWarningAcknowledgement =
+      this.authState === 'logged-out' || this.authState === 'logging-in';
+    this.signInButton.disabled =
+      isBusy || (requiresWarningAcknowledgement && !this.isWarningAcknowledged());
     this.signOutButton.disabled = isBusy;
     this.refreshButton.disabled = isBusy;
     this.backButton.disabled = isBusy;
     this.createApiKeyLink.style.pointerEvents = isBusy ? 'none' : 'auto';
     this.createApiKeyLink.style.opacity = isBusy ? '0.7' : '1';
-    const showWarningGate = this.authState === 'logged-out' || this.authState === 'logging-in';
-    this.disclaimerEl.hidden = !showWarningGate;
+    const showWarningGate = shouldShowSignInDisclaimer(this.authState);
+    this.setFlexControlVisibility(this.disclaimerEl, showWarningGate);
     this.acknowledgeLabelEl.style.display = showWarningGate ? 'flex' : 'none';
-
-    this.credentialsEl.hidden = this.authState !== 'logged-in' || this.detailMode;
-    this.detailEl.hidden = this.authState !== 'logged-in' || !this.detailMode;
     this.syncMasterDetailVisibility();
 
     if (this.authState === 'checking') {
@@ -769,6 +779,16 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.detailEl.style.display = showDetail ? '' : 'none';
   }
 
+  private setInlineControlVisibility(control: HTMLElement, isVisible: boolean): void {
+    control.hidden = !isVisible;
+    control.style.display = isVisible ? 'inline-flex' : 'none';
+  }
+
+  private setFlexControlVisibility(control: HTMLElement, isVisible: boolean): void {
+    control.hidden = !isVisible;
+    control.style.display = isVisible ? 'flex' : 'none';
+  }
+
   private syncCreateApiKeyLink(): void {
     if (!this.createApiKeyUrl) {
       this.createApiKeyLink.removeAttribute('href');
@@ -838,9 +858,39 @@ function deserializeHostMessage(raw: unknown): HostToWebviewMessage | null {
   }
 }
 
-function setupButton(button: HTMLButtonElement, label: string): void {
+type UiIconName =
+  | 'alert-triangle'
+  | 'arrow-left'
+  | 'external-link'
+  | 'rotate-ccw'
+  | 'user'
+  | 'arrow-right-from-bracket';
+type IconPosition = 'start' | 'end';
+
+function withIconLabel(
+  label: string,
+  iconName?: UiIconName,
+  iconPosition: IconPosition = 'start'
+): string {
+  if (!iconName) {
+    return label;
+  }
+
+  const icon = `<akm-icon name="${iconName}" size="12"></akm-icon>`;
+  return iconPosition === 'start' ? `${icon}<span>${label}</span>` : `<span>${label}</span>${icon}`;
+}
+
+function setupButton(
+  button: HTMLButtonElement,
+  label: string,
+  iconName?: UiIconName,
+  iconPosition: IconPosition = 'start'
+): void {
   button.type = 'button';
-  button.textContent = label;
+  button.innerHTML = withIconLabel(label, iconName, iconPosition);
+  button.style.display = 'inline-flex';
+  button.style.alignItems = 'center';
+  button.style.gap = '6px';
   button.style.width = 'max-content';
   button.style.border = '1px solid #7f95aa';
   button.style.borderRadius = '0';
@@ -853,10 +903,16 @@ function setupButton(button: HTMLButtonElement, label: string): void {
   button.style.color = '#142331';
 }
 
-function setupPrimaryLink(link: HTMLAnchorElement, label: string): void {
-  link.textContent = label;
+function setupPrimaryLink(
+  link: HTMLAnchorElement,
+  label: string,
+  iconName?: UiIconName,
+  iconPosition: IconPosition = 'start'
+): void {
+  link.innerHTML = withIconLabel(label, iconName, iconPosition);
   link.style.display = 'inline-flex';
   link.style.alignItems = 'center';
+  link.style.gap = '6px';
   link.style.width = 'max-content';
   link.style.border = '1px solid #0b63ce';
   link.style.borderRadius = '0';

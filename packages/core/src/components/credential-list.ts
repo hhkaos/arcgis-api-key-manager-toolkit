@@ -8,6 +8,7 @@ import type {
   ExpirationCategory
 } from '../types/models.js';
 import './expiration-badge.js';
+import './icon.js';
 import type { CredentialUpdateRequestDetail } from './credential-detail.js';
 
 export type { CredentialUpdateRequestDetail };
@@ -110,13 +111,9 @@ export class CredentialListElement extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 12px;
-      height: 12px;
-      border: 1px solid var(--akm-muted);
-      border-radius: 50%;
+      width: 14px;
+      height: 14px;
       color: var(--akm-muted);
-      font-size: 9px;
-      font-weight: 700;
       line-height: 1;
       cursor: help;
       text-transform: none;
@@ -255,12 +252,16 @@ export class CredentialListElement extends LitElement {
     }
 
     .chip-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       background: none;
       border: none;
       cursor: pointer;
       color: var(--akm-muted);
-      font-size: 11px;
-      padding: 0 0 0 4px;
+      padding: 0 0 0 2px;
+      width: 14px;
+      height: 14px;
       line-height: 1;
     }
 
@@ -307,7 +308,6 @@ export class CredentialListElement extends LitElement {
       justify-content: center;
       color: var(--akm-muted);
       text-decoration: none;
-      font-size: 13px;
       padding: 2px;
       border-radius: 2px;
     }
@@ -343,12 +343,16 @@ export class CredentialListElement extends LitElement {
     }
 
     .pencil-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       background: none;
       border: none;
       cursor: pointer;
       color: var(--akm-muted);
-      font-size: 11px;
-      padding: 0 2px;
+      padding: 0;
+      width: 14px;
+      height: 14px;
       line-height: 1;
       opacity: 0;
       transition: opacity 0.1s;
@@ -524,7 +528,9 @@ export class CredentialListElement extends LitElement {
             <span class="label-with-info">
               <span>Search</span>
               <span class="info-tooltip">
-                <span class="info-icon" tabindex="0" aria-label="Search supports Name, Referrer, or Partial API Key">ℹ</span>
+                <span class="info-icon" tabindex="0" aria-label="Search supports Name, Referrer, or Partial API Key">
+                  <akm-icon name="info" size="12"></akm-icon>
+                </span>
                 <span class="info-tooltip-content" role="tooltip">Name, Referrer, or Partial API Key</span>
               </span>
             </span>
@@ -577,7 +583,7 @@ export class CredentialListElement extends LitElement {
           </label>
 
           <button type="button" class="action" @click=${this.handleRefresh} ?disabled=${this.loading}>
-            ${this.loading ? 'Refreshing...' : 'Refresh'}
+            ${this.loading ? 'Refreshing...' : html`<akm-icon name="rotate-ccw" size="12"></akm-icon> Refresh`}
           </button>
         </div>
 
@@ -645,7 +651,7 @@ export class CredentialListElement extends LitElement {
                 target="_blank"
                 title="Open item settings"
                 @click=${(e: Event) => e.stopPropagation()}
-              >↗</a>`
+              ><akm-icon name="external-link" size="13" label="Open item settings"></akm-icon></a>`
             : null}
         </div>
       </div>
@@ -680,7 +686,7 @@ export class CredentialListElement extends LitElement {
           class="pencil-btn"
           title="Edit title"
           @click=${(e: Event) => { e.stopPropagation(); this.startEdit(credential, 'title'); }}
-        >✎</button>
+        ><akm-icon name="pencil" size="12" label="Edit title"></akm-icon></button>
       </div>
     `;
   }
@@ -714,7 +720,7 @@ export class CredentialListElement extends LitElement {
           class="pencil-btn"
           title="Edit description"
           @click=${(e: Event) => { e.stopPropagation(); this.startEdit(credential, 'snippet'); }}
-        >✎</button>
+        ><akm-icon name="pencil" size="12" label="Edit description"></akm-icon></button>
       </div>
     `;
   }
@@ -734,7 +740,9 @@ export class CredentialListElement extends LitElement {
             ${es!.tags.map(tag => html`
               <span class="chip">
                 ${tag}
-                <button class="chip-remove" @mousedown=${(e: Event) => { e.preventDefault(); this.removeTag(tag); }}>×</button>
+                <button class="chip-remove" @mousedown=${(e: Event) => { e.preventDefault(); this.removeTag(tag); }}>
+                  <akm-icon name="x" size="11" label="Remove tag"></akm-icon>
+                </button>
               </span>
             `)}
             <input
@@ -772,12 +780,12 @@ export class CredentialListElement extends LitElement {
 
     return html`
       <div class="editable-field subtle">
-        <span>🏷️ ${credential.tags.join(', ') || 'No tags'}</span>
+        <span><akm-icon name="tag" size="12"></akm-icon> ${credential.tags.join(', ') || 'No tags'}</span>
         <button
           class="pencil-btn"
           title="Edit tags"
           @click=${(e: Event) => { e.stopPropagation(); this.startEdit(credential, 'tags'); }}
-        >✎</button>
+        ><akm-icon name="pencil" size="12" label="Edit tags"></akm-icon></button>
       </div>
     `;
   }

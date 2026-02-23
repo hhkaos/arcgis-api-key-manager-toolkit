@@ -11,9 +11,14 @@
       <h1>ArcGIS API Keys</h1>
       <p id="popup-status" class="status"></p>
       <p id="popup-disclaimer" class="disclaimer">
-        ⚠️ This is an open source side project made for fun. It is not an official Esri project, so <strong>use it at your own risk</strong>. It is maintained by the community.<br /><br />
-        This is an experimental side project made for personal use. If anyone tries it or likes it, I would love to hear their feedback in the
-        <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">issues</a>.
+        <span class="disclaimer-content">
+          <akm-icon class="disclaimer-icon" name="alert-triangle" size="14" label="Warning"></akm-icon>
+          <span>
+            This is an open source side project made for fun. It is not an official Esri project, so <strong>use it at your own risk</strong>. It is maintained by the community.<br /><br />
+            This is an experimental side project made for personal use. If anyone tries it or likes it, I would love to hear their feedback in the
+            <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">issues</a>.
+          </span>
+        </span>
       </p>
       <label id="popup-acknowledge-label" class="field checkbox-field">
         <span>
@@ -35,7 +40,10 @@
       <button id="open-explorer" type="button" class="primary">Open Explorer</button>
 
       <details>
-        <summary>Add Environment</summary>
+        <summary class="summary-with-icon">
+          <akm-icon name="plus" size="12"></akm-icon>
+          <span>Add Environment</span>
+        </summary>
         <form id="add-env-form" class="stack">
           <label class="field">
             <span>Type</span>
@@ -65,7 +73,10 @@
             <input id="env-portal-url" placeholder="https://gis.example.com/portal" />
           </label>
 
-          <button type="submit">Save Environment</button>
+          <button type="submit" class="with-icon">
+            <akm-icon name="floppy-disk" size="12"></akm-icon>
+            <span>Save Environment</span>
+          </button>
         </form>
       </details>
 

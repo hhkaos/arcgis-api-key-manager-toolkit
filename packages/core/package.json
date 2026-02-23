@@ -20,6 +20,8 @@
     "test": "tsc -p tsconfig.test.json && cd dist-test/test && node --test"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@esri/arcgis-rest-developer-credentials": "^4.2.1",
     "@esri/arcgis-rest-request": "^4.2.1",
     "lit": "^3.2.1"

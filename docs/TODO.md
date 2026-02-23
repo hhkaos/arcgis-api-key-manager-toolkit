@@ -8,6 +8,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ## Done
 
+- [x] Replace all emoji/Unicode icon characters with `<akm-icon>` SVG component (Font Awesome) across all shared Lit components, VS Code webview shell, and Chrome explorer/popup; extract `shouldShowSignInDisclaimer()` to `ui-state.ts` in VS Code and Chrome - 2026-02-23
 - [x] Refine disclaimer text across all sign-in surfaces and complete acknowledgement checkbox gate in VS Code webview shell and Chrome full-tab explorer; sign-in button disabled until checkbox checked on both surfaces - 2026-02-23
 - [x] Fix Chrome explorer session-expired handling to silently transition to logged-out state (hides credential list, shows sign-in); update popup env dropdown to show `name (Type)`; rename type options to "ArcGIS Location Platform" / "ArcGIS Enterprise"; disable Enterprise option with coming-soon note; persist disclaimer acknowledgement in localStorage - 2026-02-23
 - [x] Add disclaimer banner and acknowledgement checkbox to all sign-in surfaces (`<sign-in-view>`, VS Code webview shell, Chrome popup, Chrome explorer); sign-in button disabled until user acknowledges "not an official Esri project" notice; add disclaimer note to README - 2026-02-23

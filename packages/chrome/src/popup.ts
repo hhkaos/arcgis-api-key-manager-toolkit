@@ -1,4 +1,5 @@
 import type { EnvironmentConfig } from '@arcgis-api-keys/core';
+import '@arcgis-api-keys/core/components';
 import {
   CHROME_MESSAGE_SCOPE,
   type ChromeRequestMessage,

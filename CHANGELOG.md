@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Core:** New `<akm-icon>` Lit web component backed by Font Awesome SVG icons (`@fortawesome/fontawesome-svg-core`, `@fortawesome/free-solid-svg-icons`); exported from `@arcgis-api-keys/core/components`.
+
+- **VS Code:** `shouldShowSignInDisclaimer()` utility extracted to `ui-state.ts`; added `setInlineControlVisibility()` / `setFlexControlVisibility()` helpers for proper `inline-flex` / `flex` layout when icons are nested in buttons and banners.
+
+- **Chrome:** `shouldShowSignInDisclaimer()` utility extracted to `ui-state.ts`; same visibility helpers added to `explorer.ts`.
+
+### Changed
+
+- **Core:** Replaced all emoji/Unicode icon characters (⚠️ ✎ ↗ ← ✓ ✕ × ℹ 🏷️) across `<credential-detail>`, `<credential-list>`, `<expiration-badge>`, `<key-action-modal>`, and `<sign-in-view>` with `<akm-icon>` SVG elements; pencil, close, and chip-remove buttons converted to fixed-size `inline-flex` containers for consistent alignment.
+
+- **VS Code:** Updated webview shell (`webview-ui.ts`) — disclaimer banner, action buttons (Sign in, Sign out, Refresh, Back), and "Create API key" link now use `<akm-icon>`; `setupButton` / `setupPrimaryLink` extended with optional icon name and position arguments.
+
+- **Chrome:** Updated `explorer.ts` and `popup.html` — all buttons, the disclaimer banner, and the "Add Environment" summary/save button now use `<akm-icon>`; `ui.css` extended with `.disclaimer-content`, `.disclaimer-icon`, `button.with-icon`, and `.summary-with-icon` layout rules.
+
+### Added
+
 - **Core:** Disclaimer banner and acknowledgement checkbox in `<sign-in-view>`; sign-in button is disabled until the user acknowledges the "not an official Esri project" notice.
 
 - **VS Code:** Disclaimer banner in the webview shell (visible only on the sign-in screen); moved "Create API key ↗" link management into a new `syncHeaderActions()` helper so the link is only rendered when the user is logged in.

@@ -1,6 +1,7 @@
 import { LitElement, css, html } from 'lit';
 import { categorizeExpiration } from '../logic/expiration.js';
 import type { ExpirationCategory } from '../types/models.js';
+import './icon.js';
 
 export class ExpirationBadgeElement extends LitElement {
   public static override properties = {
@@ -57,13 +58,23 @@ export class ExpirationBadgeElement extends LitElement {
   public override render() {
     if (this.nonExpiring) {
       const prefix = this.keyLabel ? `${this.keyLabel} · ` : '';
-      return html`<span class="badge ok">${prefix}✓ Doesn't expire</span>`;
+      return html`
+        <span class="badge ok">
+          <akm-icon name="check" size="12"></akm-icon>
+          ${prefix}Doesn't expire
+        </span>
+      `;
     }
 
     const category = this.getCategory();
-    const text = this.getLabel(category);
+    const { icon, label } = this.getBadgeContent(category);
 
-    return html`<span class="badge ${category}" title=${this.expiration}>${text}</span>`;
+    return html`
+      <span class="badge ${category}" title=${this.expiration}>
+        <akm-icon name=${icon} size="12"></akm-icon>
+        ${label}
+      </span>
+    `;
   }
 
   private getCategory(): ExpirationCategory {
@@ -74,23 +85,23 @@ export class ExpirationBadgeElement extends LitElement {
     }
   }
 
-  private getLabel(category: ExpirationCategory): string {
+  private getBadgeContent(category: ExpirationCategory): { icon: 'check' | 'alert-triangle' | 'x'; label: string } {
     const dateLabel = this.expiration ? new Date(this.expiration).toLocaleDateString() : 'Unknown';
     const prefix = this.keyLabel ? `${this.keyLabel} · ` : '';
 
     if (category === 'ok') {
-      return `${prefix}✓ Healthy · ${dateLabel}`;
+      return { icon: 'check', label: `${prefix}Healthy · ${dateLabel}` };
     }
 
     if (category === 'warning') {
-      return `${prefix}⚠ Expiring Soon · ${dateLabel}`;
+      return { icon: 'alert-triangle', label: `${prefix}Expiring Soon · ${dateLabel}` };
     }
 
     if (category === 'critical') {
-      return `${prefix}⚠ Critical · ${dateLabel}`;
+      return { icon: 'alert-triangle', label: `${prefix}Critical · ${dateLabel}` };
     }
 
-    return `${prefix}✕ Expired · ${dateLabel}`;
+    return { icon: 'x', label: `${prefix}Expired · ${dateLabel}` };
   }
 }
 
