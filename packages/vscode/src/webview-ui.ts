@@ -35,6 +35,9 @@ type CredentialDetailElement = HTMLElement & {
   portalBase: string;
   environmentType: EnvironmentType | null;
   availableTags: string[];
+  handleDeleteCheckResult?: (canDelete: boolean) => void;
+  handleCredentialDeleted?: () => void;
+  handleOperationError?: (message: string) => void;
 };
 
 type KeyActionModalElement = HTMLElement & {
@@ -58,7 +61,10 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   private readonly infoEl = document.createElement('p');
   private readonly warningEl = document.createElement('p');
   private readonly errorEl = document.createElement('p');
+  private readonly headerEl = document.createElement('div');
+  private readonly headerActionsEl = document.createElement('div');
   private readonly actionsEl = document.createElement('div');
+  private readonly createApiKeyLink = document.createElement('a');
   private readonly signInButton = document.createElement('button');
   private readonly signOutButton = document.createElement('button');
   private readonly refreshButton = document.createElement('button');
@@ -74,6 +80,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   private detailMode: boolean = false;
   private environments: EnvironmentConfig[] = [];
   private activeEnvironmentId: string | null = null;
+  private createApiKeyUrl: string | null = null;
 
   public connectedCallback(): void {
     this.render();
@@ -97,6 +104,18 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     title.style.margin = '0';
     title.style.fontSize = '18px';
     title.style.color = 'var(--vscode-editor-foreground, #18202a)';
+
+    this.headerEl.style.display = 'flex';
+    this.headerEl.style.alignItems = 'center';
+    this.headerEl.style.justifyContent = 'space-between';
+    this.headerEl.style.gap = '8px';
+    this.headerEl.style.flexWrap = 'wrap';
+
+    this.headerActionsEl.style.display = 'flex';
+    this.headerActionsEl.style.alignItems = 'center';
+    this.headerActionsEl.style.gap = '6px';
+    this.headerActionsEl.style.flexWrap = 'wrap';
+    this.headerActionsEl.addEventListener('click', (event: Event) => this.handleExternalLinkClick(event), true);
 
     this.statusEl.style.margin = '0';
 
@@ -131,6 +150,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.actionsEl.style.gap = '6px';
     this.actionsEl.style.flexWrap = 'wrap';
 
+    setupPrimaryLink(this.createApiKeyLink, 'Create API key ↗');
     setupButton(this.signInButton, 'Sign in with ArcGIS');
     setupButton(this.signOutButton, 'Sign out');
     setupButton(this.refreshButton, 'Refresh Credentials');
@@ -283,6 +303,70 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       });
     });
 
+    this.detailEl.addEventListener('credential-delete-protection-toggle-request', (event: Event) => {
+      const detail = (event as CustomEvent<{
+        credentialId: string;
+        protect: boolean;
+      }>).detail;
+      if (!detail) {
+        return;
+      }
+
+      this.post({
+        type: 'webview/toggle-credential-delete-protection',
+        payload: {
+          credentialId: detail.credentialId,
+          protect: detail.protect
+        }
+      });
+    });
+
+    this.detailEl.addEventListener('credential-favorite-toggle-request', (event: Event) => {
+      const detail = (event as CustomEvent<{
+        credentialId: string;
+        favorite: boolean;
+      }>).detail;
+      if (!detail) {
+        return;
+      }
+
+      this.post({
+        type: 'webview/toggle-credential-favorite',
+        payload: {
+          credentialId: detail.credentialId,
+          favorite: detail.favorite
+        }
+      });
+    });
+
+    this.detailEl.addEventListener('credential-delete-check-request', (event: Event) => {
+      const detail = (event as CustomEvent<{ credentialId: string }>).detail;
+      if (!detail) {
+        return;
+      }
+
+      this.post({
+        type: 'webview/check-credential-delete',
+        payload: {
+          credentialId: detail.credentialId
+        }
+      });
+    });
+
+    this.detailEl.addEventListener('credential-delete-execute-request', (event: Event) => {
+      const detail = (event as CustomEvent<{ credentialId: string }>).detail;
+      if (!detail) {
+        return;
+      }
+
+      this.post({
+        type: 'webview/delete-credential',
+        payload: {
+          credentialId: detail.credentialId
+        }
+      });
+    });
+
     this.modalEl.addEventListener('key-action-close', () => {
       this.modalEl.open = false;
     });
@@ -324,6 +408,8 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.detailEl.portalBase = '';
     this.detailEl.environmentType = null;
     this.detailEl.availableTags = [];
+    this.createApiKeyUrl = null;
+    this.syncCreateApiKeyLink();
     this.detailEl.style.display = 'none';
 
     this.modalEl.open = false;
@@ -331,10 +417,12 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.modalEl.errorMessage = '';
     this.modalEl.resultKey = null;
 
-    this.actionsEl.append(this.signInButton, this.signOutButton, this.refreshButton, this.backButton);
+    this.headerActionsEl.append(this.createApiKeyLink, this.refreshButton, this.signOutButton);
+    this.actionsEl.append(this.signInButton, this.backButton);
+    this.headerEl.append(title, this.headerActionsEl);
 
     root.append(
-      title,
+      this.headerEl,
       this.statusEl,
       this.loadingEl,
       this.infoEl,
@@ -391,6 +479,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.statusEl.textContent = this.authState === 'logged-in' ? 'Signed in.' : 'Not signed in.';
       this.credentialsEl.loading = false;
       this.detailEl.loading = false;
+      this.detailEl.handleOperationError?.(message.payload.message);
       this.modalEl.loading = false;
       this.modalEl.errorMessage = message.payload.message;
       this.setKeysLoading(false);
@@ -408,6 +497,8 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.credentialsEl.credentials = this.credentials;
       this.credentialsEl.portalBase = message.payload.portalBase ?? '';
       this.detailEl.portalBase = message.payload.portalBase ?? '';
+      this.createApiKeyUrl = toCreateApiKeyUrl(message.payload.portalBase ?? '');
+      this.syncCreateApiKeyLink();
       this.setKeysLoading(false);
 
       if (!this.selectedCredentialId || !this.credentials.some((item) => item.id === this.selectedCredentialId)) {
@@ -476,10 +567,32 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.credentials = this.credentials.map((c) => (c.id === updated.id ? updated : c));
       this.credentialsEl.credentials = this.credentials;
       this.statusEl.textContent = `Updated ${updated.name}.`;
+      return;
+    }
+
+    if (message.type === 'host/credential-delete-check-result') {
+      this.detailEl.handleDeleteCheckResult?.(message.payload.canDelete);
+      return;
+    }
+
+    if (message.type === 'host/credential-deleted') {
+      const deletedId = message.payload.credentialId;
+      this.credentials = this.credentials.filter((credential) => credential.id !== deletedId);
+      this.credentialsEl.credentials = this.credentials;
+      this.selectedCredential = null;
+      this.selectedCredentialId = this.credentials[0]?.id ?? null;
+      this.credentialsEl.selectedCredentialId = this.selectedCredentialId;
+      this.detailEl.handleCredentialDeleted?.();
+      this.detailEl.credential = null;
+      this.detailMode = false;
+      this.syncUiState();
+      this.statusEl.textContent = 'Credential deleted.';
     }
   }
 
   private syncUiState(): void {
+    this.syncCreateApiKeyLink();
+
     const isBusy =
       this.authState === 'checking' || this.authState === 'logging-in' || this.authState === 'logging-out';
 
@@ -487,11 +600,14 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.signOutButton.hidden = !(this.authState === 'logged-in' || this.authState === 'logging-out');
     this.refreshButton.hidden = this.authState !== 'logged-in';
     this.backButton.hidden = this.authState !== 'logged-in' || !this.detailMode;
+    this.createApiKeyLink.hidden = this.authState !== 'logged-in' || !this.createApiKeyUrl;
 
     this.signInButton.disabled = isBusy;
     this.signOutButton.disabled = isBusy;
     this.refreshButton.disabled = isBusy;
     this.backButton.disabled = isBusy;
+    this.createApiKeyLink.style.pointerEvents = isBusy ? 'none' : 'auto';
+    this.createApiKeyLink.style.opacity = isBusy ? '0.7' : '1';
 
     this.syncMasterDetailVisibility();
 
@@ -572,6 +688,11 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   }
 
   private handleExternalLinkClick(event: Event): void {
+    const handledKey = '__akmExternalLinkHandled';
+    if (event.defaultPrevented || Boolean((event as Event & Record<string, unknown>)[handledKey])) {
+      return;
+    }
+
     const path = event.composedPath();
     const anchor = path.find((candidate) => candidate instanceof HTMLAnchorElement);
     if (!(anchor instanceof HTMLAnchorElement)) {
@@ -583,7 +704,9 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       return;
     }
 
+    (event as Event & Record<string, unknown>)[handledKey] = true;
     event.preventDefault();
+    event.stopPropagation();
     this.post({
       type: 'webview/open-external-url',
       payload: { url: href }
@@ -595,6 +718,14 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     const showDetail = isLoggedIn && this.detailMode;
     this.credentialsEl.style.display = !isLoggedIn || showDetail ? 'none' : '';
     this.detailEl.style.display = showDetail ? '' : 'none';
+  }
+
+  private syncCreateApiKeyLink(): void {
+    if (!this.createApiKeyUrl) {
+      this.createApiKeyLink.removeAttribute('href');
+    } else {
+      this.createApiKeyLink.href = this.createApiKeyUrl;
+    }
   }
 }
 
@@ -611,6 +742,48 @@ function setupButton(button: HTMLButtonElement, label: string): void {
   button.style.background = 'var(--vscode-button-secondaryBackground, var(--vscode-editor-background, #ffffff))';
   button.style.cursor = 'pointer';
   button.style.color = 'var(--vscode-button-secondaryForeground, var(--vscode-editor-foreground, #18202a))';
+}
+
+function setupPrimaryLink(link: HTMLAnchorElement, label: string): void {
+  link.textContent = label;
+  link.style.display = 'inline-flex';
+  link.style.alignItems = 'center';
+  link.style.width = 'max-content';
+  link.style.border = '1px solid var(--vscode-button-background, #0b63ce)';
+  link.style.borderRadius = '0';
+  link.style.boxSizing = 'border-box';
+  link.style.height = '33px';
+  link.style.padding = '0 9px';
+  link.style.lineHeight = '1';
+  link.style.fontSize = '12px';
+  link.style.fontFamily = "var(--vscode-font-family, 'Manrope', 'Segoe UI', 'Helvetica Neue', sans-serif)";
+  link.style.background = 'var(--vscode-button-background, #0b63ce)';
+  link.style.cursor = 'pointer';
+  link.style.color = 'var(--vscode-button-foreground, #ffffff)';
+  link.style.textDecoration = 'none';
+}
+
+function toCreateApiKeyUrl(portalBase: string): string | null {
+  if (!portalBase) {
+    return null;
+  }
+
+  try {
+    const hostname = new URL(portalBase).hostname;
+    const isOnlineHost = hostname.endsWith('.maps.arcgis.com') || hostname.endsWith('.mapsdevext.arcgis.com');
+    if (!isOnlineHost) {
+      return null;
+    }
+
+    const [urlKey] = hostname.split('.');
+    if (!urlKey) {
+      return null;
+    }
+
+    return `https://${urlKey}.maps.arcgis.com/home/content.html?&newItem=developerCredentials#my`;
+  } catch {
+    return null;
+  }
 }
 
 function readWarningsFromPayload(payload: unknown): string[] {

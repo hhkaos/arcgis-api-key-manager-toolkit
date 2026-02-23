@@ -31,6 +31,8 @@ export interface ApiKeyCredential {
   created: string;
   expiration: string;
   referrers: string[];
+  isDeleteProtected: boolean;
+  isFavorite: boolean;
   key1: KeySlotStatus;
   key2: KeySlotStatus;
   isLegacy?: boolean;

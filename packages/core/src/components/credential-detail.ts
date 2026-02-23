@@ -21,6 +21,24 @@ export interface CredentialReferrerUpdateRequestDetail {
   referrers: string[];
 }
 
+export interface CredentialDeleteProtectionToggleRequestDetail {
+  credentialId: string;
+  protect: boolean;
+}
+
+export interface CredentialFavoriteToggleRequestDetail {
+  credentialId: string;
+  favorite: boolean;
+}
+
+export interface CredentialDeleteCheckRequestDetail {
+  credentialId: string;
+}
+
+export interface CredentialDeleteExecuteRequestDetail {
+  credentialId: string;
+}
+
 type EditingField = 'title' | 'snippet' | 'tags' | null;
 
 export class CredentialDetailElement extends LitElement {
@@ -41,7 +59,14 @@ export class CredentialDetailElement extends LitElement {
     _editingReferrers: { state: true },
     _editReferrers: { state: true },
     _savingReferrers: { state: true },
-    _showReferrerInstructions: { state: true }
+    _showReferrerInstructions: { state: true },
+    _updatingDeleteProtection: { state: true },
+    _updatingFavorite: { state: true },
+    _deleteCheckInFlight: { state: true },
+    _deleteModalOpen: { state: true },
+    _deleteModalCanDelete: { state: true },
+    _deleteModalError: { state: true },
+    _deleteInFlight: { state: true }
   };
 
   public static override styles = css`
@@ -86,9 +111,17 @@ export class CredentialDetailElement extends LitElement {
       flex: 1;
     }
 
+    .header-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .snippet { margin: 0; color: var(--akm-muted); font-size: 12px; line-height: 1.4; }
 
-    .settings-link {
+    .primary-action {
       border: 1px solid var(--akm-primary);
       border-radius: 0;
       background: var(--akm-primary);
@@ -97,15 +130,17 @@ export class CredentialDetailElement extends LitElement {
       font-family: var(--akm-font);
       padding: 7px 9px;
       cursor: pointer;
-      min-height: 33px;
+      height: 33px;
+      box-sizing: border-box;
       font-size: 12px;
       line-height: 1.2;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
     }
-    .settings-link:focus { outline: 2px solid var(--akm-focus); outline-offset: 1px; }
-    .settings-link:hover { filter: brightness(0.95); }
+    .primary-action:focus { outline: 2px solid var(--akm-focus); outline-offset: 1px; }
+    .primary-action:hover { filter: brightness(0.95); }
 
     h3 {
       margin: 0;
@@ -122,6 +157,31 @@ export class CredentialDetailElement extends LitElement {
       border-radius: 0;
       padding: 8px;
       background: var(--akm-surface-raised);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .section-links {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+
+    .section-links a {
+      color: var(--vscode-textLink-foreground, var(--akm-primary));
+      text-decoration: none;
+    }
+    .section-links a:hover {
+      color: var(--vscode-textLink-activeForeground, var(--akm-primary));
+      text-decoration: underline;
     }
 
     .meta-grid {
@@ -210,6 +270,12 @@ export class CredentialDetailElement extends LitElement {
       border-color: var(--vscode-errorForeground, #b42318);
       background: var(--akm-surface-raised);
       color: var(--vscode-errorForeground, #b42318);
+    }
+
+    button.danger {
+      border-color: var(--vscode-errorForeground, #b42318);
+      background: var(--vscode-errorForeground, #b42318);
+      color: #ffffff;
     }
 
     button.confirm-save {
@@ -491,6 +557,87 @@ export class CredentialDetailElement extends LitElement {
       align-items: center;
       flex-wrap: wrap;
     }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .toggle-description {
+      color: var(--akm-muted);
+      font-size: 12px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      width: 44px;
+      height: 24px;
+      border: 1px solid var(--akm-border);
+      background: var(--akm-surface);
+      cursor: pointer;
+      padding: 0;
+      min-height: unset;
+    }
+
+    .switch::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 2px;
+      top: 2px;
+      background: var(--akm-muted);
+      transition: transform 0.15s ease;
+    }
+
+    .switch.on {
+      border-color: var(--akm-primary);
+      background: rgba(11, 99, 206, 0.15);
+    }
+
+    .switch.on::after {
+      transform: translateX(20px);
+      background: var(--akm-primary);
+    }
+
+    .delete-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: grid;
+      place-items: center;
+      z-index: 1000;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .delete-modal {
+      width: min(460px, 100%);
+      border: 1px solid var(--akm-border);
+      background: var(--akm-surface-raised);
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .delete-modal p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--akm-text);
+      line-height: 1.4;
+    }
+
+    .delete-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
   `;
 
   public credential: ApiKeyCredential | null = null;
@@ -512,6 +659,13 @@ export class CredentialDetailElement extends LitElement {
   private _savingReferrers: boolean = false;
   private _showReferrerInstructions: boolean = false;
   private _cancelRequested: boolean = false;
+  private _updatingDeleteProtection: boolean = false;
+  private _updatingFavorite: boolean = false;
+  private _deleteCheckInFlight: boolean = false;
+  private _deleteModalOpen: boolean = false;
+  private _deleteModalCanDelete: boolean | null = null;
+  private _deleteModalError: string = '';
+  private _deleteInFlight: boolean = false;
 
   public override updated(changedProperties: Map<string, unknown>): void {
     if (changedProperties.has('credential')) {
@@ -524,10 +678,50 @@ export class CredentialDetailElement extends LitElement {
         this._savingReferrers = false;
         this._editingReferrers = false;
       }
+
+      this._updatingDeleteProtection = false;
+      this._updatingFavorite = false;
+      this._deleteCheckInFlight = false;
+      this._deleteInFlight = false;
     }
 
     if (changedProperties.has('errorMessage') && this._savingReferrers) {
       this._savingReferrers = false;
+    }
+
+    if (changedProperties.has('errorMessage') && this.errorMessage) {
+      this._updatingDeleteProtection = false;
+      this._updatingFavorite = false;
+      if (this._deleteModalOpen) {
+        this._deleteModalError = this.errorMessage;
+      }
+      this._deleteCheckInFlight = false;
+      this._deleteInFlight = false;
+    }
+  }
+
+  public handleDeleteCheckResult(canDelete: boolean): void {
+    this._deleteCheckInFlight = false;
+    this._deleteModalOpen = true;
+    this._deleteModalCanDelete = canDelete;
+    this._deleteModalError = '';
+  }
+
+  public handleCredentialDeleted(): void {
+    this._deleteModalOpen = false;
+    this._deleteModalCanDelete = null;
+    this._deleteModalError = '';
+    this._deleteInFlight = false;
+    this._deleteCheckInFlight = false;
+  }
+
+  public handleOperationError(message: string): void {
+    this._updatingDeleteProtection = false;
+    this._updatingFavorite = false;
+    this._deleteCheckInFlight = false;
+    this._deleteInFlight = false;
+    if (this._deleteModalOpen) {
+      this._deleteModalError = message;
     }
   }
 
@@ -548,6 +742,7 @@ export class CredentialDetailElement extends LitElement {
     const settingsHref = this.portalBase
       ? `${this.portalBase}/home/item.html?id=${this.credential.id}#settings`
       : '';
+    const openInPortalHref = this.getOpenInPortalHref();
 
     const privilegesDocUrl = this.environmentType === 'online'
       ? 'https://developers.arcgis.com/documentation/security-and-authentication/reference/privileges/online/'
@@ -564,15 +759,45 @@ export class CredentialDetailElement extends LitElement {
             ${this.renderTitleField()}
             ${this.renderSnippetField()}
           </div>
-          ${settingsHref
-            ? html`<a
-                class="settings-link"
-                href="${settingsHref}"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Open API Key settings in ArcGIS"
-              >Open API Key settings in ArcGIS ↗</a>`
-            : null}
+          <div class="header-actions">
+            ${openInPortalHref
+              ? html`<a
+                  class="primary-action"
+                  href=${openInPortalHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >Open in Portal</a>`
+              : null}
+            <button
+              type="button"
+              class="primary-action"
+              @click=${this.toggleFavorite}
+              ?disabled=${this.loading || this._updatingFavorite}
+            >${this._updatingFavorite
+                ? '...'
+                : this.credential.isFavorite
+                  ? 'Remove from favorite'
+                  : 'Mark as Favorite'}</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Deletion Management</h3>
+          <div class="toggle-description">
+            Prevent this item from being accidentally deleted.
+          </div>
+          <div class="toggle-row">
+            <div class="note">${this.credential.isDeleteProtected ? 'Delete protection is on.' : 'Delete protection is off.'}</div>
+            <button
+              type="button"
+              role="switch"
+              aria-label="Prevent this item from being accidentally deleted."
+              aria-checked=${String(this.credential.isDeleteProtected)}
+              class="switch ${this.credential.isDeleteProtected ? 'on' : ''}"
+              @click=${this.toggleDeleteProtection}
+              ?disabled=${this.loading || this._updatingDeleteProtection}
+            ></button>
+          </div>
         </div>
 
         <div class="section">
@@ -586,7 +811,25 @@ export class CredentialDetailElement extends LitElement {
         </div>
 
         <div class="section">
-          <h3>Privileges</h3>
+          <div class="section-header">
+            <h3>Privileges</h3>
+            <div class="section-links">
+              ${settingsHref
+                ? html`<a
+                    href="${settingsHref}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >Edit ↗</a>`
+                : null}
+              ${privilegesDocUrl
+                ? html`<a
+                    href="${privilegesDocUrl}#list-of-privileges"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >View privilege reference ↗</a>`
+                : null}
+            </div>
+          </div>
           ${this.credential.privileges.length === 0
             ? html`<div class="empty">No privileges available.</div>`
             : html`<div class="chip-list">
@@ -594,15 +837,6 @@ export class CredentialDetailElement extends LitElement {
                   (p) => html`<span class="chip" title=${p}>${p}</span>`
                 )}
               </div>`}
-          ${privilegesDocUrl
-            ? html`<div class="note">
-                <a
-                  href="${privilegesDocUrl}#list-of-privileges"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >View privilege reference ↗</a>
-              </div>`
-            : null}
         </div>
 
         <div class="section">
@@ -662,7 +896,15 @@ export class CredentialDetailElement extends LitElement {
             </div>
           </div>
         </div>
+
+        <button
+          type="button"
+          class="danger full-width"
+          @click=${this.requestDeleteCheck}
+          ?disabled=${this.loading || this._deleteCheckInFlight || this._deleteInFlight}
+        >${this._deleteCheckInFlight ? 'Checking...' : 'Delete item (API key)'}</button>
       </section>
+      ${this.renderDeleteModal()}
     `;
   }
 
@@ -1149,6 +1391,146 @@ export class CredentialDetailElement extends LitElement {
         composed: true
       })
     );
+  }
+
+  private toggleFavorite = (): void => {
+    if (!this.credential || this._updatingFavorite) return;
+
+    this._updatingFavorite = true;
+    this.dispatchEvent(
+      new CustomEvent<CredentialFavoriteToggleRequestDetail>('credential-favorite-toggle-request', {
+        detail: {
+          credentialId: this.credential.id,
+          favorite: !this.credential.isFavorite
+        },
+        bubbles: true,
+        composed: true
+      })
+    );
+  };
+
+  private getOpenInPortalHref(): string | undefined {
+    if (!this.credential || !this.portalBase) {
+      return undefined;
+    }
+
+    try {
+      const hostname = new URL(this.portalBase).hostname;
+      const [urlKey] = hostname.split('.');
+      if (!urlKey) {
+        return undefined;
+      }
+
+      return `https://${urlKey}.maps.arcgis.com/home/item.html?id=${encodeURIComponent(this.credential.id)}`;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private toggleDeleteProtection = (): void => {
+    if (!this.credential || this._updatingDeleteProtection) return;
+
+    this._updatingDeleteProtection = true;
+    this.dispatchEvent(
+      new CustomEvent<CredentialDeleteProtectionToggleRequestDetail>(
+        'credential-delete-protection-toggle-request',
+        {
+          detail: {
+            credentialId: this.credential.id,
+            protect: !this.credential.isDeleteProtected
+          },
+          bubbles: true,
+          composed: true
+        }
+      )
+    );
+  };
+
+  private requestDeleteCheck = (): void => {
+    if (!this.credential || this._deleteCheckInFlight || this._deleteInFlight) return;
+
+    this._deleteCheckInFlight = true;
+    this._deleteModalOpen = true;
+    this._deleteModalCanDelete = null;
+    this._deleteModalError = '';
+    this.dispatchEvent(
+      new CustomEvent<CredentialDeleteCheckRequestDetail>('credential-delete-check-request', {
+        detail: {
+          credentialId: this.credential.id
+        },
+        bubbles: true,
+        composed: true
+      })
+    );
+  };
+
+  private executeDelete = (): void => {
+    if (!this.credential || this._deleteInFlight) return;
+
+    this._deleteInFlight = true;
+    this._deleteModalError = '';
+    this.dispatchEvent(
+      new CustomEvent<CredentialDeleteExecuteRequestDetail>('credential-delete-execute-request', {
+        detail: {
+          credentialId: this.credential.id
+        },
+        bubbles: true,
+        composed: true
+      })
+    );
+  };
+
+  private closeDeleteModal = (): void => {
+    if (this._deleteInFlight) return;
+
+    this._deleteModalOpen = false;
+    this._deleteModalCanDelete = null;
+    this._deleteModalError = '';
+    this._deleteCheckInFlight = false;
+  };
+
+  private renderDeleteModal() {
+    if (!this._deleteModalOpen) {
+      return null;
+    }
+
+    const body =
+      this._deleteModalCanDelete === null
+        ? 'Checking if this item can be deleted...'
+        : this._deleteModalCanDelete
+          ? 'Are you sure you want to delete this item?'
+          : "The item can't be deleted because it is delete protected.";
+
+    return html`
+      <div class="delete-modal-backdrop" @click=${this.closeDeleteModal}>
+        <div
+          class="delete-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Delete API key item"
+          @click=${(event: Event) => event.stopPropagation()}
+        >
+          <p>${body}</p>
+          ${this._deleteModalError ? html`<p class="error">${this._deleteModalError}</p>` : null}
+          <div class="delete-modal-actions">
+            <button
+              type="button"
+              class="secondary"
+              @click=${this.closeDeleteModal}
+              ?disabled=${this._deleteInFlight}
+            >Cancel</button>
+            ${this._deleteModalCanDelete
+              ? html`<button
+                  type="button"
+                  class="danger"
+                  @click=${this.executeDelete}
+                  ?disabled=${this._deleteInFlight}
+                >${this._deleteInFlight ? 'Deleting...' : 'Delete'}</button>`
+              : null}
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   private getReferrerReason(reason: 'wildcard-only' | 'permissive-pattern' | 'none' | undefined): string {

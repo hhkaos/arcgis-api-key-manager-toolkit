@@ -5,12 +5,16 @@ import type {
   ArcGisPagedCredentialsResponse,
   ArcGisRestClient,
   ArcGisRestTransport,
+  CredentialDeleteCheckOptions,
+  DeleteCredentialOptions,
   FetchCredentialDetailOptions,
   FetchCredentialsOptions,
   FetchUserTagsOptions,
   KeyMutationAction,
   KeyMutationOptions,
   KeyMutationResult,
+  ToggleCredentialFavoriteOptions,
+  ToggleItemDeleteProtectionOptions,
   UpdateCredentialReferrersOptions,
   UpdateItemMetadataOptions
 } from './types.js';
@@ -66,8 +70,10 @@ interface PortalSelfResponse {
   id?: string;
   urlKey?: string;
   customBaseUrl?: string;
+  favGroupId?: string;
   user?: {
     username?: string;
+    favGroupId?: string;
   };
   username?: string;
 }
@@ -77,6 +83,18 @@ interface ItemGroupsResponse {
   groups?: unknown[];
   results?: unknown[];
   items?: unknown[];
+}
+
+interface CanDeleteResponse {
+  success?: boolean;
+}
+
+interface ItemGroupsInfo {
+  snippet?: string;
+}
+
+interface FavoriteSearchResponse {
+  total?: unknown;
 }
 
 type ValidationEndpointKey =
@@ -482,6 +500,146 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
     }
   }
 
+  public async toggleItemDeleteProtection(options: ToggleItemDeleteProtectionOptions): Promise<void> {
+    try {
+      const owner = await this.resolveItemOwner(options.environment, options.accessToken, options.credentialId);
+      const actionPath = options.protect ? 'protect' : 'unprotect';
+      const response = await this.transport.request<{ success?: boolean }>({
+        path: `/content/users/${encodeURIComponent(owner)}/items/${encodeURIComponent(
+          options.credentialId
+        )}/${actionPath}`,
+        method: 'POST',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        body: {
+          f: 'json'
+        }
+      });
+
+      if (response.success === false) {
+        throw {
+          error: {
+            code: 500,
+            message: options.protect
+              ? 'ArcGIS did not confirm delete protection was enabled.'
+              : 'ArcGIS did not confirm delete protection was disabled.'
+          }
+        };
+      }
+    } catch (error) {
+      throw mapRestError(error);
+    }
+  }
+
+  public async canDeleteCredential(options: CredentialDeleteCheckOptions): Promise<boolean> {
+    try {
+      const owner = await this.resolveItemOwner(options.environment, options.accessToken, options.credentialId);
+      const response = await this.transport.request<CanDeleteResponse>({
+        path: `/content/users/${encodeURIComponent(owner)}/items/${encodeURIComponent(
+          options.credentialId
+        )}/canDelete`,
+        method: 'GET',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        query: {
+          f: 'json'
+        }
+      });
+
+      return Boolean(response.success);
+    } catch (error) {
+      throw mapRestError(error);
+    }
+  }
+
+  public async deleteCredential(options: DeleteCredentialOptions): Promise<void> {
+    try {
+      const owner = await this.resolveItemOwner(options.environment, options.accessToken, options.credentialId);
+      const response = await this.transport.request<{ success?: boolean }>({
+        path: `/content/users/${encodeURIComponent(owner)}/items/${encodeURIComponent(
+          options.credentialId
+        )}/delete`,
+        method: 'POST',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        body: {
+          f: 'json',
+          permanentDelete: options.permanentDelete ?? false
+        }
+      });
+
+      if (response.success === false) {
+        throw {
+          error: {
+            code: 500,
+            message: 'ArcGIS did not confirm item deletion.'
+          }
+        };
+      }
+    } catch (error) {
+      throw mapRestError(error);
+    }
+  }
+
+  public async toggleCredentialFavorite(options: ToggleCredentialFavoriteOptions): Promise<void> {
+    try {
+      const portalSelf = await this.transport.request<PortalSelfResponse>({
+        path: '/portals/self',
+        method: 'GET',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        query: { f: 'json' }
+      });
+
+      const favoriteGroupId = readFavoriteGroupId(portalSelf);
+      if (!favoriteGroupId) {
+        throw {
+          error: {
+            code: 500,
+            message: 'ArcGIS portal self response did not include favGroupId.'
+          }
+        };
+      }
+
+      const path = options.favorite
+        ? `/content/items/${encodeURIComponent(options.credentialId)}/share`
+        : `/content/items/${encodeURIComponent(options.credentialId)}/unshare`;
+      const body = options.favorite
+        ? {
+            f: 'json',
+            everyone: false,
+            org: false,
+            groups: favoriteGroupId,
+            items: options.credentialId
+          }
+        : {
+            f: 'json',
+            groups: favoriteGroupId,
+            items: options.credentialId
+          };
+      const response = await this.transport.request<{ success?: boolean }>({
+        path,
+        method: 'POST',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        body
+      });
+
+      if (response.success === false) {
+        throw {
+          error: {
+            code: 500,
+            message: options.favorite
+              ? 'ArcGIS did not confirm the item was added to favorites.'
+              : 'ArcGIS did not confirm the item was removed from favorites.'
+          }
+        };
+      }
+    } catch (error) {
+      throw mapRestError(error);
+    }
+  }
+
   private async runKeyMutation(
     options: KeyMutationOptions,
     action: KeyMutationAction
@@ -569,23 +727,7 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
   private async resolveRegisteredAppCredentials(
     options: KeyMutationOptions
   ): Promise<{ owner: string; clientId: string; clientSecret: string }> {
-    const item = await this.transport.request<ItemOwnerResponse>({
-      path: `/content/items/${encodeURIComponent(options.credentialId)}`,
-      method: 'GET',
-      environment: options.environment,
-      accessToken: options.accessToken,
-      query: { f: 'json' }
-    });
-
-    const owner = readLooseString(item.owner);
-    if (!owner) {
-      throw {
-        error: {
-          code: 500,
-          message: 'ArcGIS item response did not include an owner for this API key.'
-        }
-      };
-    }
+    const owner = await this.resolveItemOwner(options.environment, options.accessToken, options.credentialId);
 
     const registered = await this.transport.request<RegisteredAppInfoResponse>({
       path: `/content/users/${encodeURIComponent(owner)}/items/${encodeURIComponent(
@@ -610,6 +752,32 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
     }
 
     return { owner, clientId, clientSecret };
+  }
+
+  private async resolveItemOwner(
+    environment: EnvironmentConfig,
+    accessToken: string,
+    credentialId: string
+  ): Promise<string> {
+    const item = await this.transport.request<ItemOwnerResponse>({
+      path: `/content/items/${encodeURIComponent(credentialId)}`,
+      method: 'GET',
+      environment,
+      accessToken,
+      query: { f: 'json' }
+    });
+
+    const owner = readLooseString(item.owner);
+    if (!owner) {
+      throw {
+        error: {
+          code: 500,
+          message: 'ArcGIS item response did not include an owner for this credential.'
+        }
+      };
+    }
+
+    return owner;
   }
 
   private async updateApiTokenExpiration(owner: string, options: KeyMutationOptions): Promise<void> {
@@ -807,17 +975,21 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
     const itemRecord = isRecord(itemPayload) ? itemPayload : {};
     const owner = readLooseString(itemRecord.owner);
 
-    const [registeredAppPayload, legacyPayload, groupsSnippet] = await Promise.all([
+    const [registeredAppPayload, legacyPayload, groupsInfo, isFavorite] = await Promise.all([
       this.fetchRegisteredAppInfo(options, owner, validator),
       includeLegacyPayload ? this.fetchLegacyCredentialDetail(options) : Promise.resolve(undefined),
-      this.fetchItemGroupsSnippet(options)
+      this.fetchItemGroupsInfo(options),
+      this.fetchFavoriteStatus(options)
     ]);
 
     const mergedPayload = mergeRecords(
       itemRecord,
       registeredAppPayload,
       legacyPayload,
-      groupsSnippet ? { snippet: groupsSnippet } : undefined
+      groupsInfo?.snippet ? { snippet: groupsInfo.snippet } : undefined,
+      {
+        isFavorite
+      }
     );
     return toCredential(mergedPayload);
   }
@@ -904,7 +1076,7 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
     }
   }
 
-  private async fetchItemGroupsSnippet(options: FetchCredentialDetailOptions): Promise<string | undefined> {
+  private async fetchItemGroupsInfo(options: FetchCredentialDetailOptions): Promise<ItemGroupsInfo | undefined> {
     try {
       const response = await this.transport.request<ItemGroupsResponse>({
         path: `/content/items/${encodeURIComponent(options.credentialId)}/groups`,
@@ -914,9 +1086,49 @@ export class ArcGisRestClientImpl implements ArcGisRestClient {
         query: { f: 'json' }
       });
 
-      return readSnippetFromGroupsResponse(response);
+      return readInfoFromGroupsResponse(response);
     } catch {
       return undefined;
+    }
+  }
+
+  private async fetchFavoriteGroupId(options: FetchCredentialDetailOptions): Promise<string | undefined> {
+    try {
+      const response = await this.transport.request<PortalSelfResponse>({
+        path: '/portals/self',
+        method: 'GET',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        query: { f: 'json' }
+      });
+      return readFavoriteGroupId(response);
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async fetchFavoriteStatus(options: FetchCredentialDetailOptions): Promise<boolean> {
+    const favoriteGroupId = await this.fetchFavoriteGroupId(options);
+    if (!favoriteGroupId) {
+      return false;
+    }
+
+    try {
+      const response = await this.transport.request<FavoriteSearchResponse>({
+        path: '/search',
+        method: 'GET',
+        environment: options.environment,
+        accessToken: options.accessToken,
+        query: {
+          f: 'json',
+          num: 100,
+          q: `(group:${favoriteGroupId} AND id:(${options.credentialId}))`
+        }
+      });
+
+      return readNumericTotal(response.total) === 1;
+    } catch {
+      return false;
     }
   }
 
@@ -963,23 +1175,38 @@ function toArray(value: unknown): unknown[] | null {
   return Array.isArray(value) ? value : null;
 }
 
-function readSnippetFromGroupsResponse(response: ItemGroupsResponse): string | undefined {
+function readInfoFromGroupsResponse(response: ItemGroupsResponse): ItemGroupsInfo {
   const directSnippet = readLooseString(response.snippet);
-  if (directSnippet) {
-    return directSnippet;
-  }
-
-  const groupRecords =
-    toArray(response.groups) ?? toArray(response.results) ?? toArray(response.items) ?? [];
+  let snippet = directSnippet;
+  const groupRecords = toArray(response.groups) ?? toArray(response.results) ?? toArray(response.items) ?? [];
 
   for (const group of groupRecords) {
     if (!isRecord(group)) {
       continue;
     }
 
-    const snippet = readLooseString(group.snippet);
-    if (snippet) {
-      return snippet;
+    if (!snippet) {
+      const groupSnippet = readLooseString(group.snippet);
+      if (groupSnippet) {
+        snippet = groupSnippet;
+      }
+    }
+  }
+
+  return {
+    snippet
+  };
+}
+
+function readNumericTotal(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
     }
   }
 
@@ -1054,6 +1281,8 @@ function toCredential(record: unknown): ApiKeyCredential | null {
       created: now,
       expiration: now,
       referrers: [],
+      isDeleteProtected: false,
+      isFavorite: false,
       key1: { slot: 1, exists: false },
       key2: { slot: 2, exists: false },
       isLegacy: false,
@@ -1123,6 +1352,12 @@ function toCredential(record: unknown): ApiKeyCredential | null {
       toStringArray(source.allowedReferrers) ??
       toStringArray(source.referers) ??
       [],
+    isDeleteProtected:
+      readBoolean(source.isDeleteProtected) ??
+      readBoolean(source.protected) ??
+      readBoolean(source.deleteProtected) ??
+      false,
+    isFavorite: readBoolean(source.isFavorite) ?? false,
     key1: {
       slot: 1,
       exists: key1Exists,
@@ -1262,6 +1497,10 @@ function readLooseString(value: unknown): string | undefined {
   }
 
   return undefined;
+}
+
+function readFavoriteGroupId(portalSelf: PortalSelfResponse): string | undefined {
+  return readLooseString(portalSelf.favGroupId) ?? readLooseString(portalSelf.user?.favGroupId);
 }
 
 function readBoolean(value: unknown): boolean | undefined {

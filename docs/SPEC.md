@@ -215,7 +215,10 @@ Each item shows:
 
 Display:
 
-- Full metadata
+- Full metadata (title, snippet, tags — all inline-editable)
+- **Delete protection toggle** — switch widget posts `webview/toggle-credential-delete-protection`; reflects `isDeleteProtected` from `ApiKeyCredential`
+- **Favorite toggle** — switch widget posts `webview/toggle-credential-favorite`; reflects `isFavorite` from `ApiKeyCredential` (determined via `favGroupId` from `/portals/self` + `/search` group membership check)
+- **Delete credential** — button triggers `webview/check-credential-delete`; host responds with `host/credential-delete-check-result`; confirmation modal then posts `webview/delete-credential`; host responds with `host/credential-deleted` and refreshes the list
 - **Full flat privilege list** — every granted privilege shown with icons/badges (no grouping or collapsing)
 - **Annotated referrer restrictions** — display URL patterns with visual annotations:
   - Warn on wildcard-only patterns (e.g., `*`)

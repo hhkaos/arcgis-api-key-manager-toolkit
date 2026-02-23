@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Core:** `isDeleteProtected` and `isFavorite` fields on `ApiKeyCredential`; `fetchCredentialDetail()` now populates both by fetching `/portals/self` (for `favGroupId`) and querying `/search` to check favorite group membership.
+- **Core:** `toggleItemDeleteProtection()`, `canDeleteCredential()`, `deleteCredential()`, and `toggleCredentialFavorite()` REST methods; corresponding option interfaces and `ArcGisRestClient` entries in `types.ts`.
+- **Core:** Protocol messages for delete and favorite flows — `webview/toggle-credential-delete-protection`, `webview/toggle-credential-favorite`, `webview/check-credential-delete`, `webview/delete-credential` (webview→host); `host/credential-delete-check-result`, `host/credential-deleted` (host→webview).
+- **Core:** Delete protection toggle (switch widget) and favorite toggle (switch widget) in `<credential-detail>`; delete button that opens a confirmation modal (fetches `canDelete` before revealing the destructive action).
+- **Core:** `resolveItemOwner()` private helper extracted from `resolveRegisteredAppCredentials()` and reused by the four new REST methods.
+
+- **VS Code:** "Create API key ↗" link in the app header (derived from `portalBase`; only shown for ArcGIS Online/Location Platform environments).
+- **VS Code:** Handlers for `webview/toggle-credential-delete-protection`, `webview/toggle-credential-favorite`, `webview/check-credential-delete`, and `webview/delete-credential` messages; post `host/credential-metadata-updated`, `host/credential-delete-check-result`, or `host/credential-deleted` in response.
+- **VS Code:** Fixed `handleExternalLinkClick` to mark events as handled in capture phase, preventing double-dispatch when the header actions container also listens at capture.
+
+- **Chrome:** "Create API key ↗" link in the app header (same logic as VS Code).
+- **Chrome:** Wired `credential-delete-protection-toggle-request`, `credential-favorite-toggle-request`, `credential-delete-check-request`, and `credential-delete-execute-request` event listeners in explorer; added corresponding cases in service worker.
+
 - **Core:** `environmentType` property on `<credential-detail>` — renders an environment-specific "View privilege reference ↗" link (ArcGIS Online, Location Platform, or Enterprise docs) in the Privileges section.
 - **Core:** "Instructions" toggle button in the inline referrer editor replaces the `<details>` collapsible panel; added `button.secondary` and `button.full-width` CSS utility classes.
 - **Core:** Inline referrer restrictions editor in `<credential-detail>` — "Edit referrers" button reveals an add/edit/delete form with per-row validation annotations; dispatches `credential-referrers-update-request` event on save.

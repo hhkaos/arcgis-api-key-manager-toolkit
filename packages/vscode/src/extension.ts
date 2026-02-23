@@ -366,6 +366,18 @@ async function handleWebviewMessage(
     case 'webview/update-credential-referrers':
       await updateCredentialReferrersForEnvironment(services, environment, panel, message.payload);
       break;
+    case 'webview/toggle-credential-delete-protection':
+      await toggleCredentialDeleteProtectionForEnvironment(services, environment, panel, message.payload);
+      break;
+    case 'webview/toggle-credential-favorite':
+      await toggleCredentialFavoriteForEnvironment(services, environment, panel, message.payload);
+      break;
+    case 'webview/check-credential-delete':
+      await checkCredentialDeleteForEnvironment(services, environment, panel, message.payload.credentialId);
+      break;
+    case 'webview/delete-credential':
+      await deleteCredentialForEnvironment(services, environment, panel, message.payload.credentialId);
+      break;
     case 'webview/open-external-url':
       await openExternalUrlForPanel(services, panel, message.payload.url);
       break;
@@ -473,6 +485,169 @@ async function updateCredentialReferrersForEnvironment(
       type: 'host/credential-metadata-updated',
       payload: { credential }
     });
+  } catch (error) {
+    const mapped = normalizeRestError(error);
+    services.webviewPanels.post(panel, {
+      type: 'host/error',
+      payload: {
+        message: mapped.message,
+        code: mapped.code,
+        recoverable: mapped.recoverable
+      }
+    });
+  }
+}
+
+async function toggleCredentialDeleteProtectionForEnvironment(
+  services: ExtensionServices,
+  environment: EnvironmentConfig,
+  panel: vscode.WebviewPanel,
+  payload: {
+    credentialId: string;
+    protect: boolean;
+  }
+): Promise<void> {
+  const token = await getValidAccessToken(services, environment, panel);
+  if (!token) {
+    return;
+  }
+
+  try {
+    await services.restClient.toggleItemDeleteProtection({
+      environment,
+      accessToken: token,
+      credentialId: payload.credentialId,
+      protect: payload.protect
+    });
+
+    const credential = await services.restClient.fetchCredentialDetail({
+      environment,
+      accessToken: token,
+      credentialId: payload.credentialId
+    });
+
+    services.webviewPanels.post(panel, {
+      type: 'host/credential-metadata-updated',
+      payload: { credential }
+    });
+  } catch (error) {
+    const mapped = normalizeRestError(error);
+    services.webviewPanels.post(panel, {
+      type: 'host/error',
+      payload: {
+        message: mapped.message,
+        code: mapped.code,
+        recoverable: mapped.recoverable
+      }
+    });
+  }
+}
+
+async function toggleCredentialFavoriteForEnvironment(
+  services: ExtensionServices,
+  environment: EnvironmentConfig,
+  panel: vscode.WebviewPanel,
+  payload: {
+    credentialId: string;
+    favorite: boolean;
+  }
+): Promise<void> {
+  const token = await getValidAccessToken(services, environment, panel);
+  if (!token) {
+    return;
+  }
+
+  try {
+    await services.restClient.toggleCredentialFavorite({
+      environment,
+      accessToken: token,
+      credentialId: payload.credentialId,
+      favorite: payload.favorite
+    });
+
+    const credential = await services.restClient.fetchCredentialDetail({
+      environment,
+      accessToken: token,
+      credentialId: payload.credentialId
+    });
+
+    services.webviewPanels.post(panel, {
+      type: 'host/credential-metadata-updated',
+      payload: { credential }
+    });
+  } catch (error) {
+    const mapped = normalizeRestError(error);
+    services.webviewPanels.post(panel, {
+      type: 'host/error',
+      payload: {
+        message: mapped.message,
+        code: mapped.code,
+        recoverable: mapped.recoverable
+      }
+    });
+  }
+}
+
+async function checkCredentialDeleteForEnvironment(
+  services: ExtensionServices,
+  environment: EnvironmentConfig,
+  panel: vscode.WebviewPanel,
+  credentialId: string
+): Promise<void> {
+  const token = await getValidAccessToken(services, environment, panel);
+  if (!token) {
+    return;
+  }
+
+  try {
+    const canDelete = await services.restClient.canDeleteCredential({
+      environment,
+      accessToken: token,
+      credentialId
+    });
+
+    services.webviewPanels.post(panel, {
+      type: 'host/credential-delete-check-result',
+      payload: { credentialId, canDelete }
+    });
+  } catch (error) {
+    const mapped = normalizeRestError(error);
+    services.webviewPanels.post(panel, {
+      type: 'host/error',
+      payload: {
+        message: mapped.message,
+        code: mapped.code,
+        recoverable: mapped.recoverable
+      }
+    });
+  }
+}
+
+async function deleteCredentialForEnvironment(
+  services: ExtensionServices,
+  environment: EnvironmentConfig,
+  panel: vscode.WebviewPanel,
+  credentialId: string
+): Promise<void> {
+  const token = await getValidAccessToken(services, environment, panel);
+  if (!token) {
+    return;
+  }
+
+  try {
+    await services.restClient.deleteCredential({
+      environment,
+      accessToken: token,
+      credentialId,
+      permanentDelete: false
+    });
+
+    services.webviewPanels.post(panel, {
+      type: 'host/credential-deleted',
+      payload: { credentialId }
+    });
+
+    await loadCredentialsForEnvironment(services, environment, panel);
   } catch (error) {
     const mapped = normalizeRestError(error);
     services.webviewPanels.post(panel, {

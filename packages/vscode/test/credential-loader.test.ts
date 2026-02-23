@@ -11,6 +11,8 @@ const baseCredential: ApiKeyCredential = {
   created: '2026-01-01T00:00:00.000Z',
   expiration: '2026-12-01T00:00:00.000Z',
   referrers: [],
+  isDeleteProtected: false,
+  isFavorite: false,
   key1: { slot: 1, exists: false },
   key2: { slot: 2, exists: false }
 };

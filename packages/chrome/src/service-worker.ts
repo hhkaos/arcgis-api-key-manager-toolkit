@@ -355,6 +355,126 @@ async function handleWebviewMessage(
         return toHostErrorPayload(error);
       }
     }
+    case 'webview/toggle-credential-delete-protection': {
+      if (!environment) {
+        return toHostError('No environment configured. Add one in the popup.', true);
+      }
+
+      const accessToken = await getValidAccessToken(services, environment);
+      if (!accessToken) {
+        return toHostError('Session expired. Sign in again to continue.', true, 'SESSION_EXPIRED');
+      }
+
+      try {
+        await services.restClient.toggleItemDeleteProtection({
+          environment,
+          accessToken,
+          credentialId: message.payload.credentialId,
+          protect: message.payload.protect
+        });
+
+        const credential = await services.restClient.fetchCredentialDetail({
+          environment,
+          accessToken,
+          credentialId: message.payload.credentialId
+        });
+
+        return {
+          type: 'host/credential-metadata-updated',
+          payload: { credential }
+        };
+      } catch (error) {
+        return toHostErrorPayload(error);
+      }
+    }
+    case 'webview/toggle-credential-favorite': {
+      if (!environment) {
+        return toHostError('No environment configured. Add one in the popup.', true);
+      }
+
+      const accessToken = await getValidAccessToken(services, environment);
+      if (!accessToken) {
+        return toHostError('Session expired. Sign in again to continue.', true, 'SESSION_EXPIRED');
+      }
+
+      try {
+        await services.restClient.toggleCredentialFavorite({
+          environment,
+          accessToken,
+          credentialId: message.payload.credentialId,
+          favorite: message.payload.favorite
+        });
+
+        const credential = await services.restClient.fetchCredentialDetail({
+          environment,
+          accessToken,
+          credentialId: message.payload.credentialId
+        });
+
+        return {
+          type: 'host/credential-metadata-updated',
+          payload: { credential }
+        };
+      } catch (error) {
+        return toHostErrorPayload(error);
+      }
+    }
+    case 'webview/check-credential-delete': {
+      if (!environment) {
+        return toHostError('No environment configured. Add one in the popup.', true);
+      }
+
+      const accessToken = await getValidAccessToken(services, environment);
+      if (!accessToken) {
+        return toHostError('Session expired. Sign in again to continue.', true, 'SESSION_EXPIRED');
+      }
+
+      try {
+        const canDelete = await services.restClient.canDeleteCredential({
+          environment,
+          accessToken,
+          credentialId: message.payload.credentialId
+        });
+
+        return {
+          type: 'host/credential-delete-check-result',
+          payload: {
+            credentialId: message.payload.credentialId,
+            canDelete
+          }
+        };
+      } catch (error) {
+        return toHostErrorPayload(error);
+      }
+    }
+    case 'webview/delete-credential': {
+      if (!environment) {
+        return toHostError('No environment configured. Add one in the popup.', true);
+      }
+
+      const accessToken = await getValidAccessToken(services, environment);
+      if (!accessToken) {
+        return toHostError('Session expired. Sign in again to continue.', true, 'SESSION_EXPIRED');
+      }
+
+      try {
+        await services.restClient.deleteCredential({
+          environment,
+          accessToken,
+          credentialId: message.payload.credentialId,
+          permanentDelete: message.payload.permanentDelete ?? false
+        });
+
+        return {
+          type: 'host/credential-deleted',
+          payload: {
+            credentialId: message.payload.credentialId
+          }
+        };
+      } catch (error) {
+        return toHostErrorPayload(error);
+      }
+    }
     default:
       return toHostError(`Unsupported webview message: ${message.type}`, true);
   }

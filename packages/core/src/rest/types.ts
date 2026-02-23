@@ -76,6 +76,33 @@ export interface UpdateCredentialReferrersOptions {
   referrers: string[];
 }
 
+export interface ToggleItemDeleteProtectionOptions {
+  environment: EnvironmentConfig;
+  accessToken: string;
+  credentialId: string;
+  protect: boolean;
+}
+
+export interface CredentialDeleteCheckOptions {
+  environment: EnvironmentConfig;
+  accessToken: string;
+  credentialId: string;
+}
+
+export interface DeleteCredentialOptions {
+  environment: EnvironmentConfig;
+  accessToken: string;
+  credentialId: string;
+  permanentDelete?: boolean;
+}
+
+export interface ToggleCredentialFavoriteOptions {
+  environment: EnvironmentConfig;
+  accessToken: string;
+  credentialId: string;
+  favorite: boolean;
+}
+
 export interface ArcGisRestClient {
   fetchCredentials(options: FetchCredentialsOptions): Promise<ApiKeyCredential[]>;
   fetchCredentialDetail(options: FetchCredentialDetailOptions): Promise<ApiKeyCredential>;
@@ -88,6 +115,10 @@ export interface ArcGisRestClient {
   fetchUserTags(options: FetchUserTagsOptions): Promise<string[]>;
   updateItemMetadata(options: UpdateItemMetadataOptions): Promise<void>;
   updateCredentialReferrers(options: UpdateCredentialReferrersOptions): Promise<void>;
+  toggleItemDeleteProtection(options: ToggleItemDeleteProtectionOptions): Promise<void>;
+  canDeleteCredential(options: CredentialDeleteCheckOptions): Promise<boolean>;
+  deleteCredential(options: DeleteCredentialOptions): Promise<void>;
+  toggleCredentialFavorite(options: ToggleCredentialFavoriteOptions): Promise<void>;
 }
 
 export type RestClientErrorCode =

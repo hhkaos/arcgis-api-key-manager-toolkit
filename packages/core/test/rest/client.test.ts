@@ -233,7 +233,9 @@ test('fetchCredentialDetail merges item and registered app responses for online'
     },
     {
       groups: [{ snippet: 'Used by the basemap demo app.' }]
-    }
+    },
+    { favGroupId: 'fav-group-id' },
+    { total: 0 }
   ]);
 
   const client = new ArcGisRestClientImpl(transport);
@@ -247,6 +249,10 @@ test('fetchCredentialDetail merges item and registered app responses for online'
   assert.equal(transport.calls[1]?.path, '/content/users/hhkaos2/items/item-id/registeredAppInfo');
   assert.equal(transport.calls[2]?.path, '/portals/self/apiKeys/item-id');
   assert.equal(transport.calls[3]?.path, '/content/items/item-id/groups');
+  assert.equal(transport.calls[4]?.path, '/portals/self');
+  assert.equal(transport.calls[5]?.path, '/search');
+  assert.equal(transport.calls[5]?.query?.num, 100);
+  assert.equal(transport.calls[5]?.query?.q, '(group:fav-group-id AND id:(item-id))');
 
   assert.equal(credential.id, 'item-id');
   assert.deepEqual(credential.tags, ['basemaps']);
@@ -256,6 +262,48 @@ test('fetchCredentialDetail merges item and registered app responses for online'
   assert.equal(credential.key1.partialId, 'AT1_H4JC97kO');
   assert.equal(credential.expiration, new Date(itemExpiration).toISOString());
   assert.equal(credential.snippet, 'Used by the basemap demo app.');
+  assert.equal(credential.isDeleteProtected, false);
+  assert.equal(credential.isFavorite, false);
+});
+
+test('fetchCredentialDetail marks favorite when favGroupId is nested under user', async () => {
+  const transport = new MockTransport([
+    {
+      id: 'item-id',
+      owner: 'hhkaos2',
+      title: 'Basemap demonstrator',
+      tags: ['basemaps'],
+      created: 1710000000000,
+      apiToken1ExpirationDate: -1,
+      apiToken2ExpirationDate: -1
+    },
+    {
+      client_id: 'lgalmA3rH4JC97kO',
+      privileges: ['premium:user:basemaps'],
+      httpReferrers: ['http://127.0.0.1:5500']
+    },
+    {},
+    {
+      groups: []
+    },
+    {
+      user: { favGroupId: 'fav-group-id' }
+    },
+    {
+      total: 1
+    }
+  ]);
+
+  const client = new ArcGisRestClientImpl(transport);
+  const credential = await client.fetchCredentialDetail({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id'
+  });
+
+  assert.equal(transport.calls[5]?.path, '/search');
+  assert.equal(transport.calls[5]?.query?.q, '(group:fav-group-id AND id:(item-id))');
+  assert.equal(credential.isFavorite, true);
 });
 
 test('fetchCredentialDetail marks active token slots from registeredAppInfo booleans', async () => {
@@ -275,7 +323,8 @@ test('fetchCredentialDetail marks active token slots from registeredAppInfo bool
       privileges: []
     },
     {},
-    { groups: [] }
+    { groups: [] },
+    {}
   ]);
 
   const client = new ArcGisRestClientImpl(transport);
@@ -308,7 +357,8 @@ test('fetchCredentialDetail derives partial IDs from registered app client ID fo
       privileges: []
     },
     {},
-    { groups: [] }
+    { groups: [] },
+    {}
   ]);
 
   const client = new ArcGisRestClientImpl(transport);
@@ -378,13 +428,15 @@ test('fetchCredentials enriches online list rows with detail metadata', async ()
       apiToken2Active: false
     },
     { groups: [] },
+    {},
     {
       privileges: ['premium:user:geocode'],
       httpReferrers: [],
       apiToken1Active: false,
       apiToken2Active: true
     },
-    { groups: [] }
+    { groups: [] },
+    {}
   ]);
 
   const client = new ArcGisRestClientImpl(transport);
@@ -439,7 +491,8 @@ test('fetchCredentials reports missing expected fields from first endpoint respo
       httpReferrers: [],
       apiToken1Active: true
     },
-    { groups: [] }
+    { groups: [] },
+    {}
   ]);
 
   const client = new ArcGisRestClientImpl(transport);
@@ -700,6 +753,111 @@ test('updateCredentialReferrers falls back to default redirect URI and trims dup
   assert.equal(transport.calls[2]?.body?.redirect_uris, '["urn:ietf:wg:oauth:2.0:oob"]');
   assert.equal(transport.calls[2]?.body?.httpReferrers, '["https://cdpn.io/"]');
   assert.equal(transport.calls[2]?.body?.privileges, '[]');
+});
+
+test('toggleItemDeleteProtection posts protect and unprotect endpoints', async () => {
+  const transport = new MockTransport([
+    { owner: 'hhkaos2' },
+    { success: true },
+    { owner: 'hhkaos2' },
+    { success: true }
+  ]);
+  const client = new ArcGisRestClientImpl(transport);
+
+  await client.toggleItemDeleteProtection({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id',
+    protect: true
+  });
+  await client.toggleItemDeleteProtection({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id',
+    protect: false
+  });
+
+  assert.equal(transport.calls[1]?.path, '/content/users/hhkaos2/items/item-id/protect');
+  assert.equal(transport.calls[1]?.method, 'POST');
+  assert.equal(transport.calls[3]?.path, '/content/users/hhkaos2/items/item-id/unprotect');
+  assert.equal(transport.calls[3]?.method, 'POST');
+});
+
+test('canDeleteCredential checks canDelete endpoint and reads success flag', async () => {
+  const transport = new MockTransport([{ owner: 'hhkaos2' }, { success: true }]);
+  const client = new ArcGisRestClientImpl(transport);
+  const canDelete = await client.canDeleteCredential({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id'
+  });
+
+  assert.equal(canDelete, true);
+  assert.equal(transport.calls[1]?.path, '/content/users/hhkaos2/items/item-id/canDelete');
+  assert.equal(transport.calls[1]?.method, 'GET');
+});
+
+test('deleteCredential posts permanentDelete false by default', async () => {
+  const transport = new MockTransport([{ owner: 'hhkaos2' }, { success: true }]);
+  const client = new ArcGisRestClientImpl(transport);
+  await client.deleteCredential({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id'
+  });
+
+  assert.equal(transport.calls[1]?.path, '/content/users/hhkaos2/items/item-id/delete');
+  assert.equal(transport.calls[1]?.method, 'POST');
+  assert.equal(transport.calls[1]?.body?.permanentDelete, false);
+});
+
+test('toggleCredentialFavorite uses portal favGroupId and share/unshare endpoints', async () => {
+  const transport = new MockTransport([
+    { favGroupId: 'fav-group-id' },
+    { success: true },
+    { favGroupId: 'fav-group-id' },
+    { success: true }
+  ]);
+  const client = new ArcGisRestClientImpl(transport);
+
+  await client.toggleCredentialFavorite({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id',
+    favorite: true
+  });
+  await client.toggleCredentialFavorite({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id',
+    favorite: false
+  });
+
+  assert.equal(transport.calls[1]?.path, '/content/items/item-id/share');
+  assert.equal(transport.calls[1]?.body?.groups, 'fav-group-id');
+  assert.equal(transport.calls[1]?.body?.items, 'item-id');
+  assert.equal(transport.calls[1]?.body?.everyone, false);
+  assert.equal(transport.calls[1]?.body?.org, false);
+  assert.equal(transport.calls[3]?.path, '/content/items/item-id/unshare');
+  assert.equal(transport.calls[3]?.body?.groups, 'fav-group-id');
+  assert.equal(transport.calls[3]?.body?.items, 'item-id');
+  assert.equal(transport.calls[3]?.body?.everyone, undefined);
+  assert.equal(transport.calls[3]?.body?.org, undefined);
+});
+
+test('toggleCredentialFavorite accepts favGroupId nested under user', async () => {
+  const transport = new MockTransport([{ user: { favGroupId: 'fav-group-id' } }, { success: true }]);
+  const client = new ArcGisRestClientImpl(transport);
+
+  await client.toggleCredentialFavorite({
+    environment: onlineEnvironment,
+    accessToken: 'token',
+    credentialId: 'item-id',
+    favorite: true
+  });
+
+  assert.equal(transport.calls[1]?.path, '/content/items/item-id/share');
+  assert.equal(transport.calls[1]?.body?.groups, 'fav-group-id');
 });
 
 test('enterprise key mutation uses documented token flow endpoints', async () => {

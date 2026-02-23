@@ -75,6 +75,28 @@ test('serializeMessage + deserializeMessage supports referrer update payloads', 
   assert.deepEqual(roundTrip, message);
 });
 
+test('serializeMessage + deserializeMessage supports delete and favorite payloads', () => {
+  const favoriteMessage: WebviewProtocolMessage = {
+    type: 'webview/toggle-credential-favorite',
+    requestId: 'req-favorite',
+    payload: {
+      credentialId: 'item-id',
+      favorite: true
+    }
+  };
+  assert.deepEqual(deserializeMessage(serializeMessage(favoriteMessage)), favoriteMessage);
+
+  const deleteCheckResult: WebviewProtocolMessage = {
+    type: 'host/credential-delete-check-result',
+    requestId: 'req-delete-check',
+    payload: {
+      credentialId: 'item-id',
+      canDelete: false
+    }
+  };
+  assert.deepEqual(deserializeMessage(serializeMessage(deleteCheckResult)), deleteCheckResult);
+});
+
 test('deserializeMessage rejects invalid messages', () => {
   assert.throws(() => deserializeMessage('{"type":"unknown","payload":{}}'));
   assert.throws(() => deserializeMessage('{"type":"webview/sign-in","payload":"bad"}'));

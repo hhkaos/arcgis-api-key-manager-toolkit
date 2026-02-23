@@ -50,6 +50,25 @@ export interface CredentialReferrersUpdateRequest {
   referrers: string[];
 }
 
+export interface CredentialDeleteProtectionRequest {
+  credentialId: string;
+  protect: boolean;
+}
+
+export interface CredentialFavoriteRequest {
+  credentialId: string;
+  favorite: boolean;
+}
+
+export interface CredentialDeleteCheckRequest {
+  credentialId: string;
+}
+
+export interface CredentialDeleteExecuteRequest {
+  credentialId: string;
+  permanentDelete?: boolean;
+}
+
 export type HostToWebviewMessage =
   | ProtocolEnvelope<'host/state', HostStatePayload>
   | ProtocolEnvelope<'host/credentials', { credentials: ApiKeyCredential[]; portalBase?: string }>
@@ -57,6 +76,8 @@ export type HostToWebviewMessage =
   | ProtocolEnvelope<'host/key-action-result', { result: KeyMutationResult }>
   | ProtocolEnvelope<'host/user-tags', { tags: string[] }>
   | ProtocolEnvelope<'host/credential-metadata-updated', { credential: ApiKeyCredential }>
+  | ProtocolEnvelope<'host/credential-delete-check-result', { credentialId: string; canDelete: boolean }>
+  | ProtocolEnvelope<'host/credential-deleted', { credentialId: string }>
   | ProtocolEnvelope<'host/error', HostErrorPayload>;
 
 export type WebviewToHostMessage =
@@ -71,7 +92,11 @@ export type WebviewToHostMessage =
   | ProtocolEnvelope<'webview/ack-error', { code?: string }>
   | ProtocolEnvelope<'webview/fetch-user-tags', Record<string, never>>
   | ProtocolEnvelope<'webview/update-credential-metadata', CredentialMetadataUpdateRequest>
-  | ProtocolEnvelope<'webview/update-credential-referrers', CredentialReferrersUpdateRequest>;
+  | ProtocolEnvelope<'webview/update-credential-referrers', CredentialReferrersUpdateRequest>
+  | ProtocolEnvelope<'webview/toggle-credential-delete-protection', CredentialDeleteProtectionRequest>
+  | ProtocolEnvelope<'webview/toggle-credential-favorite', CredentialFavoriteRequest>
+  | ProtocolEnvelope<'webview/check-credential-delete', CredentialDeleteCheckRequest>
+  | ProtocolEnvelope<'webview/delete-credential', CredentialDeleteExecuteRequest>;
 
 export type WebviewProtocolMessage = HostToWebviewMessage | WebviewToHostMessage;
 
@@ -117,6 +142,8 @@ function isProtocolMessage(value: unknown): value is WebviewProtocolMessage {
     'host/key-action-result',
     'host/user-tags',
     'host/credential-metadata-updated',
+    'host/credential-delete-check-result',
+    'host/credential-deleted',
     'host/error',
     'webview/initialize',
     'webview/select-environment',
@@ -129,7 +156,11 @@ function isProtocolMessage(value: unknown): value is WebviewProtocolMessage {
     'webview/ack-error',
     'webview/fetch-user-tags',
     'webview/update-credential-metadata',
-    'webview/update-credential-referrers'
+    'webview/update-credential-referrers',
+    'webview/toggle-credential-delete-protection',
+    'webview/toggle-credential-favorite',
+    'webview/check-credential-delete',
+    'webview/delete-credential'
   ]);
 
   return allowedTypes.has(value.type);

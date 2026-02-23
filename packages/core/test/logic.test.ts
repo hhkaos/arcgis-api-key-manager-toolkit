@@ -19,6 +19,8 @@ const credentials: ApiKeyCredential[] = [
     created: '2026-01-01T00:00:00.000Z',
     expiration: '2026-03-01T00:00:00.000Z',
     referrers: ['https://dev.example.com'],
+    isDeleteProtected: false,
+    isFavorite: false,
     key1: { slot: 1, exists: true, partialId: 'AT1_abc123de' },
     key2: { slot: 2, exists: false }
   },
@@ -30,6 +32,8 @@ const credentials: ApiKeyCredential[] = [
     created: '2025-12-01T00:00:00.000Z',
     expiration: '2026-02-22T00:00:00.000Z',
     referrers: ['*'],
+    isDeleteProtected: true,
+    isFavorite: true,
     key1: { slot: 1, exists: true, partialId: 'AT1_zyx987wv' },
     key2: { slot: 2, exists: true, partialId: 'AT2_plm456no' }
   }
