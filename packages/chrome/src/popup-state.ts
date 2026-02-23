@@ -36,3 +36,19 @@ export function shouldAutoOpenExplorerAfterSignIn(response: ChromeResponseMessag
 export function shouldShowEnterprisePortalField(environmentType: string): boolean {
   return environmentType === 'enterprise';
 }
+
+export function formatEnvironmentTypeLabel(environmentType: EnvironmentConfig['type']): string {
+  if (environmentType === 'online') {
+    return 'ArcGIS Online';
+  }
+
+  if (environmentType === 'location-platform') {
+    return 'ArcGIS Location Platform';
+  }
+
+  return 'ArcGIS Enterprise';
+}
+
+export function formatEnvironmentOptionLabel(environment: EnvironmentConfig): string {
+  return `${environment.name} (${formatEnvironmentTypeLabel(environment.type)})`;
+}

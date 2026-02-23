@@ -12,9 +12,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Core:** Disclaimer banner and acknowledgement checkbox in `<sign-in-view>`; sign-in button is disabled until the user acknowledges the "not an official Esri project" notice.
 
-- **VS Code:** Disclaimer banner and acknowledgement checkbox in the webview shell (visible only on the sign-in screen); moved "Create API key ↗" link management into a new `syncHeaderActions()` helper so the link is only rendered when the user is logged in.
+- **VS Code:** Disclaimer banner in the webview shell (visible only on the sign-in screen); moved "Create API key ↗" link management into a new `syncHeaderActions()` helper so the link is only rendered when the user is logged in.
 
-- **Chrome:** Disclaimer banner and acknowledgement checkbox in both the popup and the full-tab explorer; sign-in button disabled until acknowledged. Added `.disclaimer` and `.checkbox-field` CSS classes to `ui.css`.
+- **Chrome:** Disclaimer banner in the popup and full-tab explorer (shown on sign-in screen only); popup acknowledgement persisted in `localStorage` so users don't need to re-check on each open. Added `.disclaimer`, `.checkbox-field`, and `.hint` CSS classes to `ui.css`.
+- **Chrome:** Environment type dropdown in the popup now shows `name (Type)` (e.g. `hhkaos (ArcGIS Location Platform)`) via new `formatEnvironmentOptionLabel` / `formatEnvironmentTypeLabel` helpers in `popup-state.ts`.
+- **Chrome:** "ArcGIS Enterprise" option in the Add Environment form renamed to `ArcGIS Enterprise (Coming soon)` and disabled; a `.hint` note below the type selector links to the GitHub issues page to collect community interest.
+- **Chrome:** `SESSION_EXPIRED` error in the full-tab explorer now silently transitions to the signed-out state (hides credential list, shows sign-in screen) matching VS Code behaviour.
 
 - **Docs:** Added "not an official Esri project" warning notice to README.
 

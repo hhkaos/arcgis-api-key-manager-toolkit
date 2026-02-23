@@ -57,8 +57,6 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   private readonly actionsEl = document.createElement('div');
   private readonly createApiKeyLink = document.createElement('a');
   private readonly environmentSelectEl = document.createElement('select');
-  private readonly acknowledgeLabelEl = document.createElement('label');
-  private readonly acknowledgeCheckboxEl = document.createElement('input');
   private readonly signInButton = document.createElement('button');
   private readonly signOutButton = document.createElement('button');
   private readonly refreshButton = document.createElement('button');
@@ -144,22 +142,6 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.actionsEl.style.alignItems = 'center';
     this.actionsEl.style.gap = '8px';
     this.actionsEl.style.flexWrap = 'wrap';
-
-    this.acknowledgeLabelEl.style.display = 'flex';
-    this.acknowledgeLabelEl.style.alignItems = 'flex-start';
-    this.acknowledgeLabelEl.style.gap = '6px';
-    this.acknowledgeLabelEl.style.fontSize = '12px';
-    this.acknowledgeLabelEl.style.lineHeight = '1.35';
-    this.acknowledgeLabelEl.style.cursor = 'pointer';
-
-    this.acknowledgeCheckboxEl.type = 'checkbox';
-    this.acknowledgeCheckboxEl.style.margin = '2px 0 0 0';
-    this.acknowledgeCheckboxEl.addEventListener('change', () => this.syncUiState());
-
-    const acknowledgeTextEl = document.createElement('span');
-    acknowledgeTextEl.textContent =
-      'I have read the warning message above and I understand I want to proceed.';
-    this.acknowledgeLabelEl.replaceChildren(this.acknowledgeCheckboxEl, acknowledgeTextEl);
 
     setupPrimaryLink(this.createApiKeyLink, 'Create API key ↗');
     this.environmentSelectEl.style.minWidth = '260px';
@@ -445,7 +427,6 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.headerEl,
       this.statusEl,
       this.disclaimerEl,
-      this.acknowledgeLabelEl,
       this.loadingEl,
       this.infoEl,
       this.warningEl,
@@ -501,6 +482,13 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     }
 
     if (message.type === 'host/error') {
+      if (message.payload.code === 'SESSION_EXPIRED') {
+        this.authState = 'logged-out';
+        this.clearCredentialState();
+        this.syncUiState();
+        return;
+      }
+
       if (this.authState === 'logging-in' || this.authState === 'checking') {
         this.authState = 'logged-out';
       }
@@ -668,15 +656,14 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     this.backButton.hidden = this.authState !== 'logged-in' || !this.detailMode;
     this.createApiKeyLink.hidden = this.authState !== 'logged-in' || !this.createApiKeyUrl;
 
-    const requiresAcknowledgement = !this.signInButton.hidden;
-    this.signInButton.disabled = isBusy || (requiresAcknowledgement && !this.acknowledgeCheckboxEl.checked);
+    this.signInButton.disabled = isBusy;
     this.signOutButton.disabled = isBusy;
     this.refreshButton.disabled = isBusy;
     this.backButton.disabled = isBusy;
     this.createApiKeyLink.style.pointerEvents = isBusy ? 'none' : 'auto';
     this.createApiKeyLink.style.opacity = isBusy ? '0.7' : '1';
-    this.disclaimerEl.hidden = this.signInButton.hidden;
-    this.acknowledgeLabelEl.hidden = this.disclaimerEl.hidden;
+    const showWarningGate = this.authState === 'logged-out' || this.authState === 'logging-in';
+    this.disclaimerEl.hidden = !showWarningGate;
 
     this.credentialsEl.hidden = this.authState !== 'logged-in' || this.detailMode;
     this.detailEl.hidden = this.authState !== 'logged-in' || !this.detailMode;
@@ -759,7 +746,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   private syncMasterDetailVisibility(): void {
     const isLoggedIn = this.authState === 'logged-in';
     const showDetail = isLoggedIn && this.detailMode;
-    this.credentialsEl.style.display = showDetail ? 'none' : '';
+    this.credentialsEl.style.display = !isLoggedIn || showDetail ? 'none' : '';
     this.detailEl.style.display = showDetail ? '' : 'none';
   }
 

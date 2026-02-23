@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   computePopupControlState,
+  formatEnvironmentOptionLabel,
+  formatEnvironmentTypeLabel,
   shouldAutoOpenExplorerAfterSignIn,
   shouldShowEnterprisePortalField,
   type PopupControlState
@@ -84,4 +86,22 @@ test('enterprise portal field visibility toggles only for enterprise type', () =
   assert.equal(shouldShowEnterprisePortalField('enterprise'), true);
   assert.equal(shouldShowEnterprisePortalField('online'), false);
   assert.equal(shouldShowEnterprisePortalField('location-platform'), false);
+});
+
+test('maps environment type values to display labels', () => {
+  assert.equal(formatEnvironmentTypeLabel('online'), 'ArcGIS Online');
+  assert.equal(formatEnvironmentTypeLabel('location-platform'), 'ArcGIS Location Platform');
+  assert.equal(formatEnvironmentTypeLabel('enterprise'), 'ArcGIS Enterprise');
+});
+
+test('builds environment option labels with name and type', () => {
+  assert.equal(
+    formatEnvironmentOptionLabel({
+      id: 'env-1',
+      name: 'hhkaos',
+      type: 'location-platform',
+      clientId: 'abc123'
+    }),
+    'hhkaos (ArcGIS Location Platform)'
+  );
 });

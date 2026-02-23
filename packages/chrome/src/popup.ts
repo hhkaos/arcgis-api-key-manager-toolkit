@@ -7,6 +7,7 @@ import {
 } from './runtime-types.js';
 import {
   computePopupControlState,
+  formatEnvironmentOptionLabel,
   getActiveEnvironmentFromState,
   shouldAutoOpenExplorerAfterSignIn,
   shouldShowEnterprisePortalField
@@ -27,6 +28,7 @@ const envNameEl = requireElement<HTMLInputElement>('env-name');
 const envClientIdEl = requireElement<HTMLInputElement>('env-client-id');
 const portalUrlFieldEl = requireElement<HTMLLabelElement>('portal-url-field');
 const portalUrlEl = requireElement<HTMLInputElement>('env-portal-url');
+const WARNING_ACK_STORAGE_KEY = 'akm-warning-acknowledged';
 
 let state: ChromeState = {
   environments: [],
@@ -39,6 +41,7 @@ envTypeEl.addEventListener('change', () => {
 });
 
 acknowledgeCheckboxEl.addEventListener('change', () => {
+  persistWarningAcknowledgement(acknowledgeCheckboxEl.checked);
   render();
 });
 
@@ -98,6 +101,14 @@ openExplorerButton.addEventListener('click', async () => {
 
 addEnvForm.addEventListener('submit', async (event) => {
   event.preventDefault();
+  clearError();
+
+  if (envTypeEl.value === 'enterprise') {
+    setError(
+      'ArcGIS Enterprise support is under consideration. Share feedback in the repo issues if you want this feature added.'
+    );
+    return;
+  }
 
   const payload: Extract<ChromeRequestMessage, { type: 'popup/add-environment' }>['payload'] = {
     type: envTypeEl.value as EnvironmentConfig['type'],
@@ -129,6 +140,7 @@ chrome.runtime.onMessage.addListener((message: unknown) => {
   void refreshState();
 });
 
+initializeWarningAcknowledgement();
 void refreshState();
 syncPortalFieldVisibility();
 
@@ -168,7 +180,7 @@ function render(): void {
   for (const environment of state.environments) {
     const option = document.createElement('option');
     option.value = environment.id;
-    option.textContent = environment.name;
+    option.textContent = formatEnvironmentOptionLabel(environment);
     envSelectEl.append(option);
   }
 
@@ -184,9 +196,9 @@ function render(): void {
   signOutButton.hidden = !controls.showSignOut;
   openExplorerButton.hidden = !controls.showOpenExplorer;
   disclaimerEl.hidden = !controls.showSignIn;
-  acknowledgeLabelEl.hidden = !controls.showSignIn;
+  acknowledgeLabelEl.hidden = !controls.showSignIn || isWarningAcknowledged();
 
-  signInButton.disabled = !controls.showSignIn || !acknowledgeCheckboxEl.checked;
+  signInButton.disabled = !controls.showSignIn || !isWarningAcknowledged();
   signOutButton.disabled = !controls.showSignOut;
   openExplorerButton.disabled = !controls.showOpenExplorer;
 }
@@ -244,4 +256,16 @@ function isPushStateMessage(message: unknown): boolean {
 
   const parsed = message as { scope?: string; type?: string };
   return parsed.scope === CHROME_MESSAGE_SCOPE && parsed.type === 'host/push';
+}
+
+function initializeWarningAcknowledgement(): void {
+  acknowledgeCheckboxEl.checked = localStorage.getItem(WARNING_ACK_STORAGE_KEY) === 'true';
+}
+
+function isWarningAcknowledged(): boolean {
+  return acknowledgeCheckboxEl.checked;
+}
+
+function persistWarningAcknowledgement(value: boolean): void {
+  localStorage.setItem(WARNING_ACK_STORAGE_KEY, value ? 'true' : 'false');
 }
