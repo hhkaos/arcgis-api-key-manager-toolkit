@@ -71,3 +71,12 @@ Use the `/release` skill for versioned releases with tags and GitHub Releases.
 - **External links in VS Code webview:** anchor clicks are intercepted in `webview-ui.ts` and posted as `webview/open-external-url` messages; the extension host validates the scheme (http/https only) and opens via `vscode.env.openExternal`. Never let the webview navigate directly.
 - **Theming:** all colors use VS Code theme tokens (`--vscode-*`) with `--akm-*` design tokens as the semantic layer. No hardcoded hex colors in components.
 - **`portalBase` propagation:** must be set on both `<credential-list>` and `<credential-detail>` whenever credentials are loaded or cleared.
+
+## UI State & Regression Guardrails
+
+- Do not infer intended visibility from current code; confirm expected behavior from user request and parallel UI surfaces.
+- For visibility/state issues, verify each auth state explicitly: `checking`, `logged-out`, `logging-in`, `logged-in`, `logging-out`.
+- For explorer UI, verify both contexts: list view and detail view.
+- Avoid sticky inline display forcing for controls that should use natural/default display: remove inline `display` when visible, set `display: none` only when hidden.
+- If a change targets Chrome (or VS Code), check for parity/regression in the corresponding VS Code (or Chrome) UI unless divergence is explicitly requested.
+- Before closing a UI fix, run package-level build for touched workspace(s) and report a concise regression checklist (states checked + views checked).

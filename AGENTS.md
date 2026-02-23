@@ -52,3 +52,11 @@ Use the `ship` skill when the user asks to commit and push. It covers tests, cha
 - Read-only access to credentials in v1 (no org-wide admin management)
 - Update `CHANGELOG.md`, `docs/TODO.md`, and `docs/SPEC.md` (when relevant) with each commit
 - If expiration date lookup via `https://www.arcgis.com/sharing/rest/portals/self/apiTokens` fails, it may require username/password-based auth in that context; pause and ask the user how to proceed before forcing an auth-mode change.
+
+### UI State & Regression Guardrails
+- Do not infer intended visibility from implementation; confirm the expected behavior from user wording and existing sibling UI behavior.
+- For visibility bugs, verify all auth states explicitly: `checking`, `logged-out`, `logging-in`, `logged-in`, `logging-out`.
+- For explorer screens, verify both views explicitly: list view and detail view.
+- Avoid forcing visible state with inline style when default display should apply; prefer removing inline `display` when showing and setting `display: none` when hiding.
+- When changing one surface (Chrome or VS Code), check the corresponding surface for parity unless user explicitly asks for divergence.
+- Before reporting completion, run at least package-level build for touched workspace(s) and include a short regression checklist in the update (state matrix + view matrix).

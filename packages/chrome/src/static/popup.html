@@ -14,7 +14,7 @@
         <span class="disclaimer-content">
           <akm-icon class="disclaimer-icon" name="alert-triangle" size="14" label="Warning"></akm-icon>
           <span>
-            This is an open source side project made for fun. It is not an official Esri project, so <strong>use it at your own risk</strong>. It is maintained by the community.<br /><br />
+            This is an open source side project made for personal use. It is not an official Esri project, so <strong>use it at your own risk</strong>. It is maintained by the community.<br /><br />
             This is an experimental side project made for personal use. If anyone tries it or likes it, I would love to hear their feedback in the
             <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">issues</a>.
           </span>
@@ -50,21 +50,29 @@
             <select id="env-type" required>
               <option value="online">ArcGIS Online</option>
               <option value="location-platform">ArcGIS Location Platform</option>
-              <option value="enterprise" disabled>ArcGIS Enterprise (Coming soon)</option>
+              <option value="enterprise">ArcGIS Enterprise (to be considered)</option>
             </select>
           </label>
-          <p class="hint">
+          <p id="env-type-message" class="hint" hidden>
             ArcGIS Enterprise support is under consideration. If you need it, please add feedback in
             <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">the repo issues</a>.
           </p>
 
-          <label class="field">
+          <label id="env-name-field" class="field">
             <span>Name</span>
             <input id="env-name" required />
           </label>
 
-          <label class="field">
-            <span>Client ID</span>
+          <label id="env-client-id-field" class="field">
+            <span>
+              Client ID
+              (<a
+                href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit?tab=readme-ov-file#try-it-out"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Help</a
+              >)
+            </span>
             <input id="env-client-id" required />
           </label>
 
@@ -73,7 +81,7 @@
             <input id="env-portal-url" placeholder="https://gis.example.com/portal" />
           </label>
 
-          <button type="submit" class="with-icon">
+          <button id="save-env" type="submit" class="with-icon">
             <akm-icon name="floppy-disk" size="12"></akm-icon>
             <span>Save Environment</span>
           </button>

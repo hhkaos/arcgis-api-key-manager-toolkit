@@ -76,6 +76,7 @@ h1 {
   align-items: flex-start;
   gap: 6px;
   line-height: 1.35;
+  cursor: pointer;
 }
 
 .checkbox-field input[type='checkbox'] {
@@ -86,12 +87,24 @@ h1 {
   display: none;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 button,
-select,
-input {
+select {
   border: 1px solid #9ab0c6;
   border-radius: 0;
   min-height: 32px;
+  padding: 6px 8px;
+  font: inherit;
+  color: inherit;
+  background: #ffffff;
+}
+
+input {
+  border: 1px solid #9ab0c6;
+  border-radius: 0;
   padding: 6px 8px;
   font: inherit;
   color: inherit;
@@ -107,6 +120,10 @@ button.with-icon,
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.summary-with-icon {
+  cursor: pointer;
 }
 
 button.primary {

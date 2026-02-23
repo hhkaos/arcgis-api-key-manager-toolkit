@@ -70,10 +70,11 @@ npm run build --workspace=packages/vscode
 npm run build --workspace=packages/chrome
 ```
 
-Then create release artifacts:
+Then package the VS Code extension locally:
 
 - **VS Code extension:** Run `npx vsce package` in `packages/vscode/` to produce the `.vsix` file
-- **Chrome extension:** Run `zip -r chrome-extension-v<version>.zip packages/chrome/dist` to create the Chrome extension archive
+
+> The Chrome extension zip and GitHub Release will be created automatically by the GitHub Actions workflow when the tag is pushed in step 8.
 
 ## 7. Stage, commit, and push
 
@@ -99,26 +100,20 @@ Then push with `git push`.
 
 Run `git tag v<version>` and `git push --tags`.
 
-## 9. Create GitHub Release
+## 9. Verify GitHub Release
 
-Use `gh release create` to create the release on GitHub:
+After pushing the tag, the GitHub Actions `release.yml` workflow automatically builds all packages, packages both extensions, and creates the GitHub Release with the assets attached.
+
+Monitor the workflow run with:
 
 ```bash
-gh release create v<version> \
-  --title "v<version>" \
-  --notes "<changelog entries for this version>" \
-  packages/vscode/arcgis-api-key-explorer-<version>.vsix \
-  chrome-extension-v<version>.zip
+gh run watch
 ```
 
-The `--notes` should contain the full changelog entries for this version (the Added, Changed, Fixed, Removed sections) formatted in markdown.
+Once complete, confirm the release is live:
 
-## 10. Clean up
+```bash
+gh release view v<version>
+```
 
-Remove the temporary archive:
-
-- `rm chrome-extension-v<version>.zip`
-
-(The `.vsix` file is inside `packages/vscode/` and can be kept or removed at the user's discretion.)
-
-Confirm the release is live by showing the GitHub Release URL.
+Show the user the GitHub Release URL.

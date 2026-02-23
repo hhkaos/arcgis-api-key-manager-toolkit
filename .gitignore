@@ -3,5 +3,7 @@ dist
 dist-test
 coverage
 *.vsix
+packages/chrome/*.zip
+*.tgz
 .DS_Store
 .vscode-test

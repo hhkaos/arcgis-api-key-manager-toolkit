@@ -107,7 +107,7 @@ export class SignInViewElement extends LitElement {
         <p class="disclaimer">
           <akm-icon name="alert-triangle" size="14" label="Warning"></akm-icon>
           <span>
-            This is an open source side project made for fun. It is not an official Esri project, so <strong>use it at your own risk</strong>. It is maintained by the community.<br /><br />
+            This is an open source side project made for personal use. It is not an official Esri project, so <strong>use it at your own risk</strong>. It is maintained by the community.<br /><br />
             This is an experimental side project made for personal use. If anyone tries it or likes it, I would love to hear their feedback in the
             <a href="https://github.com/hhkaos/arcgis-api-key-manager-toolkit/issues" target="_blank" rel="noopener noreferrer">issues</a>.
           </span>

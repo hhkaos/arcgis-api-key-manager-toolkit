@@ -681,7 +681,9 @@ class ArcgisApiKeysAppElement extends HTMLElement {
     const showRefreshButton = this.authState === 'logged-in';
     const showBackButton = this.authState === 'logged-in' && this.detailMode;
     const showCreateApiKeyLink = this.authState === 'logged-in' && Boolean(this.createApiKeyUrl);
+    const showEnvironmentSelect = this.authState === 'logged-out' || this.authState === 'logging-in';
 
+    this.setDefaultControlVisibility(this.environmentSelectEl, showEnvironmentSelect);
     this.setInlineControlVisibility(this.signInButton, showSignInButton);
     this.setInlineControlVisibility(this.signOutButton, showSignOutButton);
     this.setInlineControlVisibility(this.refreshButton, showRefreshButton);
@@ -692,6 +694,7 @@ class ArcgisApiKeysAppElement extends HTMLElement {
       this.authState === 'logged-out' || this.authState === 'logging-in';
     this.signInButton.disabled =
       isBusy || (requiresWarningAcknowledgement && !this.isWarningAcknowledged());
+    this.environmentSelectEl.disabled = isBusy || this.environments.length === 0;
     this.signOutButton.disabled = isBusy;
     this.refreshButton.disabled = isBusy;
     this.backButton.disabled = isBusy;
@@ -787,6 +790,16 @@ class ArcgisApiKeysAppElement extends HTMLElement {
   private setInlineControlVisibility(control: HTMLElement, isVisible: boolean): void {
     control.hidden = !isVisible;
     control.style.display = isVisible ? 'inline-flex' : 'none';
+  }
+
+  private setDefaultControlVisibility(control: HTMLElement, isVisible: boolean): void {
+    control.hidden = !isVisible;
+    if (isVisible) {
+      control.style.removeProperty('display');
+      return;
+    }
+
+    control.style.display = 'none';
   }
 
   private setFlexControlVisibility(control: HTMLElement, isVisible: boolean): void {

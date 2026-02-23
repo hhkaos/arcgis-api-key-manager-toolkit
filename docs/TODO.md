@@ -273,3 +273,17 @@ Status: `[x] Baseline implemented` (moved ahead of remaining VS Code polish on 2
 - [ ] Security review of manifest permissions
 
 ---
+
+## Roadmap Ideas (Feedback-Driven)
+
+These improvements are candidates for future phases and will be prioritized based on received user feedback.
+
+- [ ] Add ArcGIS Enterprise support
+- [ ] Improve tests to validate real REST request behavior (reduce response mocking where feasible)
+- [ ] Keep cached configuration, show last update timestamp, and refresh keys on demand
+- [ ] Optimize credential/config requests to remove duplicated calls
+- [ ] Add user-configurable session expiration time
+- [ ] Optionally persist credential metadata (excluding API key secrets), with manual refresh and last fetch date display
+- [ ] Edit privileges
+- [ ] Create API keys (items)
+- [ ] Connect to a Vault

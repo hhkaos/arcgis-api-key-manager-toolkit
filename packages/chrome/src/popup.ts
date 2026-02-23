@@ -10,8 +10,7 @@ import {
   computePopupControlState,
   formatEnvironmentOptionLabel,
   getActiveEnvironmentFromState,
-  shouldAutoOpenExplorerAfterSignIn,
-  shouldShowEnterprisePortalField
+  shouldAutoOpenExplorerAfterSignIn
 } from './popup-state.js';
 
 const statusEl = requireElement<HTMLParagraphElement>('popup-status');
@@ -24,12 +23,16 @@ const signInButton = requireElement<HTMLButtonElement>('sign-in');
 const signOutButton = requireElement<HTMLButtonElement>('sign-out');
 const openExplorerButton = requireElement<HTMLButtonElement>('open-explorer');
 const addEnvForm = requireElement<HTMLFormElement>('add-env-form');
+const addEnvDetailsEl = addEnvForm.closest('details');
 const envTypeEl = requireElement<HTMLSelectElement>('env-type');
+const envTypeMessageEl = requireElement<HTMLParagraphElement>('env-type-message');
+const envNameFieldEl = requireElement<HTMLLabelElement>('env-name-field');
 const envNameEl = requireElement<HTMLInputElement>('env-name');
+const envClientIdFieldEl = requireElement<HTMLLabelElement>('env-client-id-field');
 const envClientIdEl = requireElement<HTMLInputElement>('env-client-id');
 const portalUrlFieldEl = requireElement<HTMLLabelElement>('portal-url-field');
 const portalUrlEl = requireElement<HTMLInputElement>('env-portal-url');
-const WARNING_ACK_STORAGE_KEY = 'akm-warning-acknowledged';
+const saveEnvButton = requireElement<HTMLButtonElement>('save-env');
 
 let state: ChromeState = {
   environments: [],
@@ -38,11 +41,10 @@ let state: ChromeState = {
 };
 
 envTypeEl.addEventListener('change', () => {
-  syncPortalFieldVisibility();
+  syncEnvironmentTypeState();
 });
 
 acknowledgeCheckboxEl.addEventListener('change', () => {
-  persistWarningAcknowledgement(acknowledgeCheckboxEl.checked);
   render();
 });
 
@@ -94,6 +96,9 @@ envSelectEl.addEventListener('change', async () => {
   });
 
   handleStateResponse(response);
+  if (response.ok) {
+    collapseAddEnvironmentPanel();
+  }
 });
 
 openExplorerButton.addEventListener('click', async () => {
@@ -106,7 +111,7 @@ addEnvForm.addEventListener('submit', async (event) => {
 
   if (envTypeEl.value === 'enterprise') {
     setError(
-      'ArcGIS Enterprise support is under consideration. Share feedback in the repo issues if you want this feature added.'
+      'ArcGIS Enterprise support is under consideration. If you need it, please add feedback in the repo issues.'
     );
     return;
   }
@@ -130,6 +135,7 @@ addEnvForm.addEventListener('submit', async (event) => {
     envNameEl.value = '';
     envClientIdEl.value = '';
     portalUrlEl.value = '';
+    collapseAddEnvironmentPanel();
   }
 });
 
@@ -143,7 +149,7 @@ chrome.runtime.onMessage.addListener((message: unknown) => {
 
 initializeWarningAcknowledgement();
 void refreshState();
-syncPortalFieldVisibility();
+syncEnvironmentTypeState();
 
 async function refreshState(): Promise<void> {
   const response = await request({
@@ -197,7 +203,7 @@ function render(): void {
   signOutButton.hidden = !controls.showSignOut;
   openExplorerButton.hidden = !controls.showOpenExplorer;
   disclaimerEl.hidden = !controls.showSignIn;
-  acknowledgeLabelEl.hidden = !controls.showSignIn || isWarningAcknowledged();
+  acknowledgeLabelEl.hidden = !controls.showSignIn;
 
   signInButton.disabled = !controls.showSignIn || !isWarningAcknowledged();
   signOutButton.disabled = !controls.showSignOut;
@@ -244,10 +250,28 @@ async function openExplorer(): Promise<void> {
   });
 }
 
-function syncPortalFieldVisibility(): void {
-  const isEnterprise = shouldShowEnterprisePortalField(envTypeEl.value);
-  portalUrlFieldEl.hidden = !isEnterprise;
-  portalUrlEl.required = isEnterprise;
+function syncEnvironmentTypeState(): void {
+  const isEnterprise = envTypeEl.value === 'enterprise';
+
+  envTypeMessageEl.hidden = !isEnterprise;
+  envNameFieldEl.hidden = isEnterprise;
+  envClientIdFieldEl.hidden = isEnterprise;
+  portalUrlFieldEl.hidden = true;
+
+  envNameEl.required = !isEnterprise;
+  envClientIdEl.required = !isEnterprise;
+  portalUrlEl.required = false;
+
+  saveEnvButton.hidden = isEnterprise;
+  saveEnvButton.disabled = false;
+}
+
+function collapseAddEnvironmentPanel(): void {
+  if (!(addEnvDetailsEl instanceof HTMLDetailsElement)) {
+    return;
+  }
+
+  addEnvDetailsEl.open = false;
 }
 
 function isPushStateMessage(message: unknown): boolean {
@@ -260,13 +284,9 @@ function isPushStateMessage(message: unknown): boolean {
 }
 
 function initializeWarningAcknowledgement(): void {
-  acknowledgeCheckboxEl.checked = localStorage.getItem(WARNING_ACK_STORAGE_KEY) === 'true';
+  acknowledgeCheckboxEl.checked = false;
 }
 
 function isWarningAcknowledged(): boolean {
   return acknowledgeCheckboxEl.checked;
-}
-
-function persistWarningAcknowledgement(value: boolean): void {
-  localStorage.setItem(WARNING_ACK_STORAGE_KEY, value ? 'true' : 'false');
 }

@@ -69,7 +69,7 @@ export class CredentialListElement extends LitElement {
       --akm-focus: var(--vscode-focusBorder, #8fbef5);
       --akm-hover: var(--vscode-list-hoverBackground, #f1f6fb);
       --akm-selected: var(--vscode-list-activeSelectionBackground, #dceeff);
-      --akm-credential-columns: minmax(220px, 2.8fr) minmax(220px, 1.6fr) minmax(120px, 0.9fr) 28px 28px 40px;
+      --akm-credential-columns: minmax(220px, 2.4fr) minmax(160px, 1.3fr) minmax(220px, 1.6fr) minmax(120px, 0.9fr) 28px 28px 40px;
       font-family: var(--akm-font);
       color: var(--akm-text);
     }
@@ -95,6 +95,18 @@ export class CredentialListElement extends LitElement {
       gap: 6px;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       align-items: end;
+    }
+
+    .toolbar-advanced > label {
+      min-width: 0;
+    }
+
+    .toolbar-advanced select {
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .advanced-toggle-row {
@@ -309,8 +321,7 @@ export class CredentialListElement extends LitElement {
 
     .expiration-slots {
       display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
+      flex-direction: column;
       gap: 4px;
       align-items: flex-start;
     }
@@ -369,10 +380,33 @@ export class CredentialListElement extends LitElement {
     /* Inline edit styles */
     .editable-field {
       position: relative;
-      display: inline-flex;
-      align-items: baseline;
+      display: flex;
+      align-items: center;
       gap: 4px;
+      width: 100%;
       max-width: 100%;
+      min-width: 0;
+    }
+
+    .credential-cell {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+      align-content: center;
+    }
+
+    .field-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .tags-col,
+    .tags-cell {
+      justify-self: start;
+      min-width: 0;
     }
 
     .pencil-btn {
@@ -635,6 +669,7 @@ export class CredentialListElement extends LitElement {
               : html`
                   <div class="header-row">
                     <span class="col-heading">Credential</span>
+                    <span class="col-heading tags-col">Tags</span>
                     <span class="col-heading keys-col">Keys</span>
                     <span class="col-heading details-col">Details</span>
                     <span class="col-heading fav-col"><akm-icon name="star" size="11" label="Favorite"></akm-icon></span>
@@ -661,11 +696,11 @@ export class CredentialListElement extends LitElement {
         @click=${() => this.handleRowClick(credential.id)}
         @keydown=${(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') this.handleRowClick(credential.id); }}
       >
-        <div>
+        <div class="credential-cell">
           ${this.renderTitleField(credential, es)}
           ${this.renderSnippetField(credential, es)}
-          ${this.renderTagsField(credential, es)}
         </div>
+        <div class="tags-cell">${this.renderTagsField(credential, es)}</div>
         <div class="expiration-slots keys-col">
           ${
             credential.isLegacy
@@ -738,7 +773,7 @@ export class CredentialListElement extends LitElement {
 
     return html`
       <div class="editable-field name">
-        <span>${credential.name}</span>
+        <span class="field-text">${credential.name}</span>
         <button
           class="pencil-btn"
           title="Edit title"
@@ -772,7 +807,7 @@ export class CredentialListElement extends LitElement {
 
     return html`
       <div class="editable-field subtle">
-        <span>${credential.snippet || 'No description'}</span>
+        <span class="field-text">${credential.snippet || 'No description'}</span>
         <button
           class="pencil-btn"
           title="Edit description"

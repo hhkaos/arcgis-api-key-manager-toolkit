@@ -32,6 +32,8 @@ type ExplorerNode = CategoryNode | AccountNode;
 
 const VIEW_ID = 'arcgisApiKeys';
 const VERBOSE_HTTP_LOG_CONFIG = 'arcgisApiKeys.debug.verboseHttpLogging';
+const CLIENT_ID_HELP_URL =
+  'https://github.com/hhkaos/arcgis-api-key-manager-toolkit?tab=readme-ov-file#try-it-out';
 
 const CATEGORIES: CategoryNode[] = [
   { kind: 'online', label: 'ArcGIS Online' },
@@ -138,6 +140,15 @@ function registerCommands(context: vscode.ExtensionContext, services: ExtensionS
     });
     if (!name) {
       return;
+    }
+
+    const clientIdHelpAction = await vscode.window.showInformationMessage(
+      'Need help finding your ArcGIS OAuth client ID?',
+      'Open Help',
+      'Continue'
+    );
+    if (clientIdHelpAction === 'Open Help') {
+      await vscode.env.openExternal(vscode.Uri.parse(CLIENT_ID_HELP_URL));
     }
 
     const clientId = await vscode.window.showInputBox({
