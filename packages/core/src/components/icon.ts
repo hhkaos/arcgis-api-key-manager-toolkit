@@ -11,6 +11,7 @@ import {
   faPenToSquare,
   faPlus,
   faRotateLeft,
+  faStar,
   faTag,
   faTrash,
   faTriangleExclamation,
@@ -34,6 +35,7 @@ type IconName =
   | 'pencil'
   | 'plus'
   | 'rotate-ccw'
+  | 'star'
   | 'tag'
   | 'trash'
   | 'user'
@@ -53,6 +55,7 @@ const ICONS = {
   pencil: faPenToSquare,
   plus: faPlus,
   'rotate-ccw': faRotateLeft,
+  star: faStar,
   tag: faTag,
   trash: faTrash,
   user: faUser,

@@ -33,6 +33,10 @@ export function filterCredentials(
       return false;
     }
 
+    if (filter.favorites && !credential.isFavorite) {
+      return false;
+    }
+
     return true;
   });
 }

@@ -43,9 +43,11 @@ export class CredentialListElement extends LitElement {
     filterTag: { state: true },
     filterPrivilege: { state: true },
     filterExpiration: { state: true },
+    filterFavorites: { state: true },
     sortOption: { state: true },
     _editingState: { state: true },
-    _saving: { state: true }
+    _saving: { state: true },
+    _advancedOpen: { state: true }
   };
 
   public static override styles = css`
@@ -65,7 +67,7 @@ export class CredentialListElement extends LitElement {
       --akm-focus: var(--vscode-focusBorder, #8fbef5);
       --akm-hover: var(--vscode-list-hoverBackground, #f1f6fb);
       --akm-selected: var(--vscode-list-activeSelectionBackground, #dceeff);
-      --akm-credential-columns: minmax(220px, 2.8fr) minmax(220px, 1.6fr) minmax(120px, 0.9fr) 40px;
+      --akm-credential-columns: minmax(220px, 2.8fr) minmax(220px, 1.6fr) minmax(120px, 0.9fr) 28px 40px;
       font-family: var(--akm-font);
       color: var(--akm-text);
     }
@@ -79,11 +81,83 @@ export class CredentialListElement extends LitElement {
       padding: 10px;
     }
 
-    .toolbar {
+    .toolbar-basic {
+      display: grid;
+      gap: 6px;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+    }
+
+    .toolbar-advanced {
       display: grid;
       gap: 6px;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       align-items: end;
+    }
+
+    .advanced-toggle-row {
+      display: flex;
+      align-items: center;
+    }
+
+    .advanced-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--akm-primary);
+      padding: 0;
+      font-family: var(--akm-font);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .advanced-toggle:hover {
+      opacity: 0.75;
+    }
+
+    .fav-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: 1px solid var(--akm-input-border);
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--akm-muted);
+      padding: 7px 10px;
+      font-family: var(--akm-font);
+      min-height: 34px;
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+
+    .fav-toggle.active {
+      color: var(--vscode-charts-yellow, #e8a020);
+      border-color: var(--vscode-charts-yellow, #e8a020);
+      background: color-mix(in srgb, var(--vscode-charts-yellow, #e8a020) 10%, transparent);
+    }
+
+    .fav-toggle:focus {
+      outline: 2px solid var(--akm-focus);
+      outline-offset: 1px;
+    }
+
+    .fav-col,
+    .fav-cell {
+      justify-self: center;
+      text-align: center;
+    }
+
+    .star-fav {
+      color: var(--vscode-charts-yellow, #e8a020);
+      display: inline-flex;
+    }
+
+    .star-unfav {
+      color: var(--akm-muted);
+      opacity: 0.25;
+      display: inline-flex;
     }
 
     label {
@@ -93,55 +167,6 @@ export class CredentialListElement extends LitElement {
       color: var(--akm-muted);
       letter-spacing: 0.02em;
       text-transform: uppercase;
-    }
-
-    .label-with-info {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .info-tooltip {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .info-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 14px;
-      height: 14px;
-      color: var(--akm-muted);
-      line-height: 1;
-      cursor: help;
-      text-transform: none;
-    }
-
-    .info-tooltip-content {
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      z-index: 1;
-      border: 1px solid var(--akm-border);
-      background: var(--akm-surface-raised);
-      color: var(--akm-text);
-      padding: 6px 8px;
-      font-size: 11px;
-      font-weight: 400;
-      text-transform: none;
-      letter-spacing: 0;
-      white-space: nowrap;
-      visibility: hidden;
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .info-tooltip:hover .info-tooltip-content,
-    .info-tooltip:focus-within .info-tooltip-content {
-      visibility: visible;
-      opacity: 1;
     }
 
     input,
@@ -492,10 +517,12 @@ export class CredentialListElement extends LitElement {
   private filterTag: string = '';
   private filterPrivilege: string = '';
   private filterExpiration: '' | ExpirationCategory = '';
+  private filterFavorites: boolean = false;
   private sortOption: SortOption = 'created-desc';
   private _editingState: EditingState | null = null;
   private _saving: boolean = false;
   private _cancelRequested: boolean = false;
+  private _advancedOpen: boolean = false;
 
   private readonly applySearchDebounced = debounce((value: string) => {
     this.searchText = value;
@@ -523,69 +550,72 @@ export class CredentialListElement extends LitElement {
 
     return html`
       <section class="panel">
-        <div class="toolbar">
-          <label>
-            <span class="label-with-info">
-              <span>Search</span>
-              <span class="info-tooltip">
-                <span class="info-icon" tabindex="0" aria-label="Search supports Name, Referrer, or Partial API Key">
-                  <akm-icon name="info" size="12"></akm-icon>
-                </span>
-                <span class="info-tooltip-content" role="tooltip">Name, Referrer, or Partial API Key</span>
-              </span>
-            </span>
-            <input
-              type="text"
-              .value=${this.searchDraft}
-              placeholder="Search"
-              @input=${this.handleSearchInput}
-              ?disabled=${this.loading}
-            />
-          </label>
-
-          <label>
-            Filter Tag
-            <select @change=${this.handleTagFilter} ?disabled=${this.loading}>
-              <option value="">All tags</option>
-              ${tags.map((tag) => html`<option value=${tag} ?selected=${this.filterTag === tag}>${tag}</option>`)}
-            </select>
-          </label>
-
-          <label>
-            Filter Privilege
-            <select @change=${this.handlePrivilegeFilter} ?disabled=${this.loading}>
-              <option value="">All privileges</option>
-              ${privileges.map(
-                (privilege) => html`<option value=${privilege} ?selected=${this.filterPrivilege === privilege}>${privilege}</option>`
-              )}
-            </select>
-          </label>
-
-          <label>
-            Filter Expiration
-            <select @change=${this.handleExpirationFilter} ?disabled=${this.loading}>
-              <option value="">All states</option>
-              <option value="ok" ?selected=${this.filterExpiration === 'ok'}>Healthy</option>
-              <option value="warning" ?selected=${this.filterExpiration === 'warning'}>Warning</option>
-              <option value="critical" ?selected=${this.filterExpiration === 'critical'}>Critical</option>
-              <option value="expired" ?selected=${this.filterExpiration === 'expired'}>Expired</option>
-            </select>
-          </label>
-
-          <label>
-            Sort
-            <select @change=${this.handleSortChange} ?disabled=${this.loading}>
-              <option value="expiration-asc" ?selected=${this.sortOption === 'expiration-asc'}>Expiration (Soonest)</option>
-              <option value="expiration-desc" ?selected=${this.sortOption === 'expiration-desc'}>Expiration (Latest)</option>
-              <option value="name-asc" ?selected=${this.sortOption === 'name-asc'}>Name (A-Z)</option>
-              <option value="created-desc" ?selected=${this.sortOption === 'created-desc'}>Created (Newest)</option>
-            </select>
-          </label>
-
-          <button type="button" class="action" @click=${this.handleRefresh} ?disabled=${this.loading}>
-            ${this.loading ? 'Refreshing...' : html`<akm-icon name="rotate-ccw" size="12"></akm-icon> Refresh`}
+        <div class="toolbar-basic">
+          <input
+            type="text"
+            .value=${this.searchDraft}
+            placeholder="Search by name, referrer, or partial API key"
+            @input=${this.handleSearchInput}
+            ?disabled=${this.loading}
+          />
+          <button
+            type="button"
+            class="fav-toggle ${this.filterFavorites ? 'active' : ''}"
+            @click=${this.handleFavoritesToggle}
+            ?disabled=${this.loading}
+          >
+            <akm-icon name="star" size="12"></akm-icon> Favorites only
           </button>
         </div>
+
+        <div class="advanced-toggle-row">
+          <button type="button" class="advanced-toggle" @click=${this.handleAdvancedToggle}>
+            ${this._advancedOpen ? '▾' : '▸'} Advanced options
+          </button>
+        </div>
+
+        ${this._advancedOpen ? html`
+          <div class="toolbar-advanced">
+            <label>
+              Tag
+              <select @change=${this.handleTagFilter} ?disabled=${this.loading}>
+                <option value="">All tags</option>
+                ${tags.map((tag) => html`<option value=${tag} ?selected=${this.filterTag === tag}>${tag}</option>`)}
+              </select>
+            </label>
+
+            <label>
+              Privilege
+              <select @change=${this.handlePrivilegeFilter} ?disabled=${this.loading}>
+                <option value="">All privileges</option>
+                ${privileges.map(
+                  (privilege) => html`<option value=${privilege} ?selected=${this.filterPrivilege === privilege}>${privilege}</option>`
+                )}
+              </select>
+            </label>
+
+            <label>
+              Expiration
+              <select @change=${this.handleExpirationFilter} ?disabled=${this.loading}>
+                <option value="">All states</option>
+                <option value="ok" ?selected=${this.filterExpiration === 'ok'}>Healthy</option>
+                <option value="warning" ?selected=${this.filterExpiration === 'warning'}>Warning</option>
+                <option value="critical" ?selected=${this.filterExpiration === 'critical'}>Critical</option>
+                <option value="expired" ?selected=${this.filterExpiration === 'expired'}>Expired</option>
+              </select>
+            </label>
+
+            <label>
+              Sort
+              <select @change=${this.handleSortChange} ?disabled=${this.loading}>
+                <option value="expiration-asc" ?selected=${this.sortOption === 'expiration-asc'}>Expiration (Soonest)</option>
+                <option value="expiration-desc" ?selected=${this.sortOption === 'expiration-desc'}>Expiration (Latest)</option>
+                <option value="name-asc" ?selected=${this.sortOption === 'name-asc'}>Name (A-Z)</option>
+                <option value="created-desc" ?selected=${this.sortOption === 'created-desc'}>Created (Newest)</option>
+              </select>
+            </label>
+          </div>
+        ` : null}
 
         ${this.errorMessage ? html`<div class="error">${this.errorMessage}</div>` : null}
 
@@ -598,6 +628,7 @@ export class CredentialListElement extends LitElement {
                     <span class="col-heading">Credential</span>
                     <span class="col-heading keys-col">Keys</span>
                     <span class="col-heading details-col">Details</span>
+                    <span class="col-heading fav-col"><akm-icon name="star" size="11" label="Favorite"></akm-icon></span>
                     <span class="col-heading item-col">Item</span>
                   </div>
                   ${filteredCredentials.map((credential) => this.renderRow(credential))}
@@ -642,6 +673,11 @@ export class CredentialListElement extends LitElement {
         <div class="details-cell">
           <div class="subtle">${credential.privileges.length} privileges</div>
           <div class="subtle">${credential.referrers.length} referrers</div>
+        </div>
+        <div class="fav-cell">
+          <span class="${credential.isFavorite ? 'star-fav' : 'star-unfav'}">
+            <akm-icon name="star" size="13" label="${credential.isFavorite ? 'Favorite' : 'Not favorite'}"></akm-icon>
+          </span>
         </div>
         <div class="item-cell">
           ${this.portalBase
@@ -880,7 +916,8 @@ export class CredentialListElement extends LitElement {
       search: this.searchText || undefined,
       tag: this.filterTag || undefined,
       privilege: this.filterPrivilege || undefined,
-      expiration: this.filterExpiration || undefined
+      expiration: this.filterExpiration || undefined,
+      favorites: this.filterFavorites || undefined
     };
 
     const sort = this.parseSortOption(this.sortOption);
@@ -936,13 +973,12 @@ export class CredentialListElement extends LitElement {
     this.sortOption = (event.target as HTMLSelectElement).value as SortOption;
   }
 
-  private handleRefresh(): void {
-    this.dispatchEvent(
-      new CustomEvent('credential-refresh', {
-        bubbles: true,
-        composed: true
-      })
-    );
+  private handleFavoritesToggle(): void {
+    this.filterFavorites = !this.filterFavorites;
+  }
+
+  private handleAdvancedToggle(): void {
+    this._advancedOpen = !this._advancedOpen;
   }
 }
 

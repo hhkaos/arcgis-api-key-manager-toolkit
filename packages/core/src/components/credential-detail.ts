@@ -772,7 +772,7 @@ export class CredentialDetailElement extends LitElement {
                   href=${openInPortalHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                >Open in Portal</a>`
+                >Open in Portal <akm-icon name="external-link" size="12" label="Open in Portal"></akm-icon></a>`
               : null}
             <button
               type="button"

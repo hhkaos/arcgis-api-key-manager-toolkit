@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - **Core:** Replaced all emoji/Unicode icon characters (⚠️ ✎ ↗ ← ✓ ✕ × ℹ 🏷️) across `<credential-detail>`, `<credential-list>`, `<expiration-badge>`, `<key-action-modal>`, and `<sign-in-view>` with `<akm-icon>` SVG elements; pencil, close, and chip-remove buttons converted to fixed-size `inline-flex` containers for consistent alignment.
+- **Core:** Updated `<credential-list>` toolbar UX to a compact basic mode with collapsible advanced options; added a `Favorites only` quick filter toggle, a dedicated favorite-star column in list rows, and `favorites` support in `CredentialFilter`/`filterCredentials()`.
+- **Core:** Updated `<credential-detail>` “Open in Portal” link text to include an explicit external-link icon for clearer affordance.
 
 - **VS Code:** Updated webview shell (`webview-ui.ts`) — disclaimer banner, action buttons (Sign in, Sign out, Refresh, Back), and "Create API key" link now use `<akm-icon>`; `setupButton` / `setupPrimaryLink` extended with optional icon name and position arguments.
 

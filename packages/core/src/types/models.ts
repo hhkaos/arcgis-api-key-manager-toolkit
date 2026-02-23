@@ -46,6 +46,7 @@ export interface CredentialFilter {
   tag?: string;
   privilege?: string;
   expiration?: ExpirationCategory;
+  favorites?: boolean;
 }
 
 export type CredentialSortField = 'name' | 'expiration' | 'created';

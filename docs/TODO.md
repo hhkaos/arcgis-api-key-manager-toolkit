@@ -8,6 +8,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done
 
 ## Done
 
+- [x] Refine `<credential-list>` filtering UX with compact basic toolbar + collapsible advanced options; add favorites-only filter and favorite-star indicator column; add external-link icon affordance to credential detail “Open in Portal” link - 2026-02-23
 - [x] Replace all emoji/Unicode icon characters with `<akm-icon>` SVG component (Font Awesome) across all shared Lit components, VS Code webview shell, and Chrome explorer/popup; extract `shouldShowSignInDisclaimer()` to `ui-state.ts` in VS Code and Chrome - 2026-02-23
 - [x] Refine disclaimer text across all sign-in surfaces and complete acknowledgement checkbox gate in VS Code webview shell and Chrome full-tab explorer; sign-in button disabled until checkbox checked on both surfaces - 2026-02-23
 - [x] Fix Chrome explorer session-expired handling to silently transition to logged-out state (hides credential list, shows sign-in); update popup env dropdown to show `name (Type)`; rename type options to "ArcGIS Location Platform" / "ArcGIS Enterprise"; disable Enterprise option with coming-soon note; persist disclaimer acknowledgement in localStorage - 2026-02-23
